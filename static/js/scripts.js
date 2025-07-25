@@ -64,6 +64,103 @@ if (culturalForm) {
     });
 }
 
+// Feedback functionality
+const feedbackForm = document.getElementById('feedback-form');
+const starBtns = document.querySelectorAll('.star-btn');
+const ratingValue = document.getElementById('rating-value');
+const feedbackSubmit = document.getElementById('feedback-submit');
+const feedbackResponse = document.getElementById('feedback-response');
+
+if (feedbackForm && starBtns.length > 0) {
+    // Star rating functionality
+    starBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const rating = parseInt(this.dataset.rating);
+            ratingValue.value = rating;
+            
+            // Update star display
+            starBtns.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('text-gray-300');
+                    star.classList.add('text-yellow-500');
+                } else {
+                    star.classList.remove('text-yellow-500');
+                    star.classList.add('text-gray-300');
+                }
+            });
+            
+            // Enable submit button
+            feedbackSubmit.disabled = false;
+        });
+        
+        // Hover effects
+        btn.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.dataset.rating);
+            starBtns.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('text-yellow-400');
+                }
+            });
+        });
+        
+        btn.addEventListener('mouseleave', function() {
+            starBtns.forEach(star => {
+                star.classList.remove('text-yellow-400');
+            });
+        });
+    });
+    
+    // Submit feedback
+    feedbackForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const requestId = document.getElementById('request-id').value;
+        const rating = ratingValue.value;
+        const feedbackText = document.getElementById('feedback-text').value;
+        
+        if (!rating) {
+            showAlert('Please select a star rating.', 'error');
+            return;
+        }
+        
+        // Show loading state
+        feedbackSubmit.disabled = true;
+        feedbackSubmit.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+        
+        try {
+            const formData = new FormData();
+            formData.append('request_id', requestId);
+            formData.append('rating', rating);
+            formData.append('feedback', feedbackText);
+            
+            const response = await fetch('/feedback', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Show success message
+                feedbackResponse.classList.remove('hidden');
+                feedbackForm.style.display = 'none';
+                
+                // Scroll to response
+                feedbackResponse.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                showAlert(data.error || 'Unable to submit feedback. Please try again.', 'error');
+                feedbackSubmit.disabled = false;
+                feedbackSubmit.innerHTML = '<i class="fas fa-heart mr-2"></i>Submit Feedback';
+            }
+        } catch (error) {
+            console.error('Feedback error:', error);
+            showAlert('Network error. Please check your connection and try again.', 'error');
+            feedbackSubmit.disabled = false;
+            feedbackSubmit.innerHTML = '<i class="fas fa-heart mr-2"></i>Submit Feedback';
+        }
+    });
+}
+
 // Chat functionality
 if (chatForm) {
     chatForm.addEventListener('submit', async function(e) {

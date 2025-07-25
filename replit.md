@@ -14,11 +14,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 - **Framework**: Flask 2.3.3 with Python 3.9+
+- **Database**: PostgreSQL with SQLAlchemy ORM for data persistence
 - **Structure**: Modular design with separate service layers for external API integrations
 - **Entry Points**: 
   - `main.py` - Application entry point
-  - `app.py` - Flask app configuration
-  - `routes.py` - HTTP route handlers
+  - `app.py` - Flask app configuration with database setup
+  - `routes.py` - HTTP route handlers with database integration
+  - `models.py` - SQLAlchemy database models
 
 ### Frontend Architecture
 - **Template Engine**: Jinja2 templates with HTML5
@@ -34,8 +36,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Core Routes
 1. **GET /** - Main landing page with cultural preference input form
-2. **POST /recommend** - Processes cultural input and returns style recommendations
-3. **POST /chat** (planned) - Interactive AI stylist chat feature
+2. **POST /recommend** - Processes cultural input, stores in database, and returns style recommendations
+3. **POST /chat** - Interactive AI stylist chat feature
+4. **POST /feedback** - User feedback and rating system for style recommendations
+5. **GET /popular** - Display popular cultural input combinations
 
 ### Service Layer
 1. **Qloo Integration**:
@@ -52,33 +56,61 @@ Preferred communication style: Simple, everyday language.
 ### Frontend Components
 1. **Input Form**: Cultural preference textarea with real-time validation
 2. **Results Display**: Aesthetic identity presentation with brand suggestions
-3. **Loading States**: User feedback during API processing
-4. **Error Handling**: Graceful degradation when APIs fail
+3. **User Feedback System**: Star rating and text feedback for style recommendations
+4. **Interactive Chat**: AI stylist chat for follow-up style questions
+5. **Loading States**: User feedback during API processing
+6. **Error Handling**: Graceful degradation when APIs fail
 
 ## Data Flow
 
 1. **User Input**: Cultural preferences entered via web form
-2. **Qloo Processing**: Cultural entities mapped to fashion archetypes
-3. **Gemini Generation**: AI creates personalized style recommendations
-4. **Response Rendering**: Results displayed with aesthetic name, brands, outfits, and moodboard
-5. **Error Handling**: Fallback responses when external APIs fail
+2. **Database Storage**: Request stored with user IP and cultural input
+3. **Qloo Processing**: Cultural entities mapped to fashion archetypes (with error handling)
+4. **Gemini Generation**: AI creates personalized style recommendations
+5. **Database Update**: Complete results stored including processing time and success status
+6. **Response Rendering**: Results displayed with aesthetic name, brands, outfits, and moodboard
+7. **User Feedback**: Optional star rating and comments stored for continuous improvement
+8. **Analytics Tracking**: Popular inputs and system metrics updated for insights
 
-### Data Structure
+### Database Schema
 ```python
-# Qloo Response
+# StyleRequest - Core style generation requests
 {
+    "id": int,
+    "cultural_input": str,
+    "ip_address": str,
+    "aesthetic_name": str,
+    "brands": str,  # JSON array
+    "outfit_description": str,
+    "moodboard_description": str,
+    "qloo_response": str,  # JSON
+    "gemini_response": str,  # JSON
     "success": bool,
-    "archetypes": List[str],
-    "raw_response": Dict,
-    "entities_processed": List[str]
+    "processing_time_ms": int,
+    "user_rating": int,  # 1-5 stars
+    "user_feedback": str,
+    "created_at": datetime
 }
 
-# Gemini Response
+# PopularCulturalInput - Analytics
 {
-    "aesthetic_name": str,
-    "brands": List[str],
-    "outfit": str,
-    "moodboard": str
+    "cultural_input": str,
+    "request_count": int,
+    "last_requested": datetime,
+    "avg_rating": float
+}
+
+# SystemMetrics - Daily performance tracking
+{
+    "date": date,
+    "total_requests": int,
+    "successful_requests": int,
+    "avg_processing_time_ms": int,
+    "qloo_api_calls": int,
+    "gemini_api_calls": int,
+    "unique_ips": int,
+    "chat_messages": int,
+    "user_ratings_submitted": int
 }
 ```
 

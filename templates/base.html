@@ -44,7 +44,13 @@
                     <i class="fas fa-magic text-purple-600 text-2xl"></i>
                     <span class="text-2xl font-bold text-gray-900">Mimesis</span>
                 </a>
-                <p class="text-sm text-gray-600 hidden sm:block">Cultural Style Intelligence</p>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('popular_inputs') }}" class="text-sm text-purple-600 hover:text-purple-700 font-medium hidden sm:flex items-center">
+                        <i class="fas fa-fire mr-1"></i>
+                        Popular
+                    </a>
+                    <p class="text-sm text-gray-600 hidden md:block">Cultural Style Intelligence</p>
+                </div>
             </div>
         </div>
     </nav>
