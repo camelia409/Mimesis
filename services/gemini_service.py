@@ -36,7 +36,7 @@ Key principles:
 
 Respond with a JSON object containing:
 - aesthetic_name: A unique, creative style identity (e.g., "Neo-Noir Luxe", "Digital Femme Fatale")
-- brands: Array of 6 brand suggestions mixing luxury, indie, thrift, and DIY options from diverse global markets
+- brands: Array of 6 brand suggestions mixing luxury, indie, thrift, and DIY options from diverse global markets. IMPORTANT: Include 1 Instagram boutique handle (e.g., @SeoulVibesStudio, @TokyoStreetFashion, @BerlinVintageFinds)
 - outfit: Detailed outfit description with specific pieces, colors, and styling
 - moodboard: Rich description of colors, textures, themes, and visual elements"""
 

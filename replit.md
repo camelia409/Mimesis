@@ -31,6 +31,7 @@ Preferred communication style: Simple, everyday language.
 ### API Integration Layer
 - **Qloo Service** (`services/qloo_service.py`): Handles cultural preference mapping to fashion archetypes
 - **Gemini Service** (`services/gemini_service.py`): Generates style recommendations using Google's AI
+- **Unsplash Service** (`services/unsplash_service.py`): Fetches curated moodboard images based on aesthetic themes
 
 ## Key Components
 
@@ -127,9 +128,15 @@ Preferred communication style: Simple, everyday language.
    - Purpose: Style recommendation generation
    - Output: Structured JSON responses
 
+3. **Unsplash API**:
+   - Endpoint: `https://api.unsplash.com/search/photos`
+   - Authentication: Access key
+   - Purpose: Visual moodboard image generation
+
 ### Environment Variables
 - `QLOO_API_KEY`: Qloo API authentication key
 - `GEMINI_API_KEY`: Google Gemini API key
+- `UNSPLASH_ACCESS_KEY`: Unsplash API access key for moodboard images
 - `SESSION_SECRET`: Flask session security key
 
 ### CDN Dependencies

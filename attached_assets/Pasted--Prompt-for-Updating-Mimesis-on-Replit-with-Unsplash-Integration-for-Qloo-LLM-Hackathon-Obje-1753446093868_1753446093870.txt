@@ -1,0 +1,218 @@
+**Prompt for Updating Mimesis on Replit with Unsplash Integration for Qloo LLM Hackathon**
+
+**Objective**: Enhance the **Mimesis** web application, a cultural style intelligence engine for the Qloo LLM Hackathon, by implementing the following updates: moodboard visualization using the Unsplash API, enhanced AI stylist chat with context-aware conversations, social media integration mockup, analytics dashboard, and submission polish. These updates build on the existing production-ready app, which uses Qloo’s Taste AI™ API (key: `CvVdTX4-BEHocC3z1A9VCakIfYFSeSlXtXtY-4SKijo`) and Google’s Gemini API (key: `AIzaSyA2JL7kXFhurNWZqh__DHRghXFxUiEtW-0`) to generate inclusive, privacy-first fashion recommendations, with PostgreSQL (SQLAlchemy) for data persistence, user feedback, and analytics. Integrate the Unsplash API (Application ID: `783038`, Access Key: `EBzLJAz-Ej9e7PyqqbNTvWuIwhh-h0B1zgafbU9GFd4`, Secret Key: `ixKUPMBaEVlf0PAet1axQ-nB5HTJ2Dujar_jAiUDy_Q`) for moodboard images. Deploy on Replit using Python and Flask, ensuring a live demo URL, public GitHub repo, and a polished 3-minute demo video for submission by **Aug 1, 2025, 9:15 PM GMT+5:30**.
+
+**Enhancement Goals**:
+1. **Moodboard Visualization**: Use Unsplash API to display 3-5 images matching moodboard themes (e.g., neon cityscapes for “Quantum Nomad Siren”).
+2. **Enhanced AI Stylist Chat**: Implement context-aware, multi-turn conversations linked to style requests, stored in the database.
+3. **Social Media Integration Mockup**: Add a static “Share Your Vibe” feature to simulate TikTok/Instagram integration.
+4. **Analytics Dashboard**: Create a UI page to display trending cultural combinations and system performance metrics.
+5. **Submission Polish**: Optimize demo video, README, and pitch deck for maximum hackathon impact.
+
+**Technical Requirements**:
+- **Platform**: Replit (Python template).
+- **Backend**: Extend Flask with new routes; integrate Unsplash API using provided keys.
+- **Frontend**: Update HTML templates with Tailwind CSS; add JavaScript for chat and sharing.
+- **APIs**:
+  - **Unsplash**: Application ID `783038`, Access Key `EBzLJAz-Ej9e7PyqqbNTvWuIwhh-h0B1zgafbU9GFd4`, Secret Key `ixKUPMBaEVlf0PAet1axQ-nB5HTJ2Dujar_jAiUDy_Q`.
+  - **Existing**: Qloo Taste AI™, Gemini 2.5 Flash.
+- **Database**: Extend PostgreSQL models (StyleRequest, ChatMessage, PopularCulturalInput, SystemMetrics).
+- **Deployment**: Replit live URL.
+- **Submission**: GitHub repo, 3-minute YouTube/Vimeo video.
+
+**Detailed Development Steps**:
+
+1. **Moodboard Visualization**:
+   - Add Unsplash Access Key to Replit Secrets: `UNSPLASH_ACCESS_KEY=EBzLJAz-Ej9e7PyqqbNTvWuIwhh-h0B1zgafbU9GFd4`.
+   - Update `main.py` to fetch images:
+     ```python
+     import requests
+     def fetch_moodboard_images(moodboard_description):
+         url = "https://api.unsplash.com/search/photos"
+         params = {
+             "query": moodboard_description.split(",")[0].strip(),  # e.g., "neon blue"
+             "client_id": os.environ.get("UNSPLASH_ACCESS_KEY"),
+             "per_page": 5
+         }
+         try:
+             response = requests.get(url, params=params)
+             response.raise_for_status()
+             return [photo["urls"]["small"] for photo in response.json()["results"]]
+         except requests.RequestException:
+             return []
+     @app.route("/recommend", methods=["POST"])
+     def recommend():
+         # Existing Qloo/Gemini code
+         recommendations = json.loads(gemini_response.text)
+         moodboard_images = fetch_moodboard_images(recommendations["moodboard"])
+         session = db_session()
+         style_request = StyleRequest(cultural_input=user_input, response=json.dumps(recommendations))
+         session.add(style_request)
+         session.commit()
+         return render_template("results.html", input=user_input, recommendations=recommendations, moodboard_images=moodboard_images, style_request_id=style_request.id)
+     ```
+   - Update `templates/results.html`:
+     ```html
+     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+       {% for img in moodboard_images %}
+         <img src="{{ img }}" alt="Moodboard image" class="w-full h-48 object-cover rounded-lg">
+       {% endfor %}
+     </div>
+     ```
+   - Test: Input “Doja Cat, Blade Runner 2049, Death Stranding” → Expect 3-5 images (e.g., neon cityscapes).
+
+2. **Enhanced AI Stylist Chat**:
+   - Extend `ChatMessage` model:
+     ```python
+     from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+     class ChatMessage(Base):
+         __tablename__ = "chat_messages"
+         id = Column(Integer, primary_key=True)
+         style_request_id = Column(Integer, ForeignKey("style_requests.id"))
+         input = Column(String)
+         response = Column(String)
+         timestamp = Column(DateTime, default=datetime.utcnow)
+     ```
+   - Add `/chat` route in `main.py`:
+     ```python
+     @app.route("/chat", methods=["POST"])
+     def chat():
+         user_input = request.form.get("chat_input")
+         style_request_id = request.form.get("style_request_id")
+         session = db_session()
+         style_request = session.query(StyleRequest).get(style_request_id)
+         prev_messages = session.query(ChatMessage).filter_by(style_request_id=style_request_id).order_by(ChatMessage.timestamp).all()
+         context = "\n".join([f"User: {m.input}\nAI: {m.response}" for m in prev_messages[-3:]])
+         prompt = f"""
+         Context: Style for {style_request.cultural_input}: {style_request.response}.
+         Previous chat: {context}
+         User question: {user_input}
+         Respond as an AI stylist in 1-2 sentences.
+         """
+         try:
+             gemini_response = model.generate_content(prompt).text
+             new_message = ChatMessage(style_request_id=style_request_id, input=user_input, response=gemini_response)
+             session.add(new_message)
+             session.commit()
+             return jsonify({"response": gemini_response})
+         except:
+             return jsonify({"error": "Chat failed"}), 500
+     ```
+   - Update `results.html`:
+     ```html
+     <div class="mt-4">
+       <h2>Ask Your AI Stylist</h2>
+       <input id="chat-input" type="text" placeholder="E.g., Berlin rave outfit?" class="w-full p-2 border rounded">
+       <button onclick="sendChat('{{ style_request_id }}')" class="bg-purple-600 text-white p-2 rounded mt-2 hover:bg-purple-700">Send</button>
+       <div id="chat-output" class="mt-2"></div>
+     </div>
+     <script>
+       async function sendChat(styleRequestId) {
+         const input = document.getElementById("chat-input").value;
+         if (!input) return alert("Enter a question.");
+         document.getElementById("chat-output").innerText = "Loading...";
+         const response = await fetch("/chat", {
+           method: "POST",
+           headers: { "Content-Type": "application/x-www-form-urlencoded" },
+           body: `chat_input=${encodeURIComponent(input)}&style_request_id=${styleRequestId}`
+         });
+         const data = await response.json();
+         document.getElementById("chat-output").innerText = data.response || data.error;
+       }
+     </script>
+     ```
+   - Test: Ask “Berlin rave outfit for Quantum Nomad Siren” → Expect response like “Holographic crop top, neon leggings.”
+
+3. **Social Media Integration Mockup**:
+   - Update `results.html`:
+     ```html
+     <button onclick="shareVibe('{{ recommendations.aesthetic_name }}')" class="bg-purple-600 text-white p-2 rounded mt-4 hover:bg-purple-700">Share on TikTok</button>
+     <script>
+       function shareVibe(aestheticName) {
+         alert(`Mock TikTok share: Post your '${aestheticName}' aesthetic with #MimesisStyle!`);
+       }
+     </script>
+     ```
+   - Update Gemini prompt in `main.py`:
+     ```plaintext
+     Prompt addition: "Include one Instagram boutique handle (e.g., @SeoulVibesStudio) in brands."
+     ```
+   - Test: Click share button → Expect alert; check brands for Instagram handle.
+
+4. **Analytics Dashboard**:
+   - Add `/analytics` route in `main.py`:
+     ```python
+     @app.route("/analytics")
+     def analytics():
+         session = db_session()
+         popular_inputs = session.query(PopularCulturalInput).order_by(PopularCulturalInput.count.desc()).limit(5).all()
+         metrics = session.query(SystemMetrics).order_by(SystemMetrics.date.desc()).limit(7).all()
+         return render_template("analytics.html", popular_inputs=popular_inputs, metrics=metrics)
+     ```
+   - Create `templates/analytics.html`:
+     ```html
+     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+     <div class="container mx-auto p-4">
+       <h1 class="text-2xl font-bold text-purple-600">Style Analytics</h1>
+       <h2 class="text-xl mt-4">Top Cultural Combinations</h2>
+       <ul class="list-disc pl-6">
+         {% for item in popular_inputs %}
+           <li>{{ item.cultural_input }} ({{ item.count }} uses)</li>
+         {% endfor %}
+       </ul>
+       <h2 class="text-xl mt-4">Performance Metrics</h2>
+       <table class="w-full border-collapse border">
+         <tr class="bg-purple-100"><th class="border p-2">Date</th><th class="border p-2">Avg Response Time</th><th class="border p-2">Success Rate</th></tr>
+         {% for metric in metrics %}
+           <tr><td class="border p-2">{{ metric.date }}</td><td class="border p-2">{{ metric.avg_response_time }}s</td><td class="border p-2">{{ metric.success_rate }}%</td></tr>
+         {% endfor %}
+       </table>
+       <a href="/" class="text-purple-600 mt-4 inline-block">Back to Home</a>
+     </div>
+     ```
+   - Test: Visit `/analytics` → Expect top 5 inputs, 7 days of metrics.
+
+5. **Submission Polish**:
+   - **Demo Video**:
+     - Record 3-minute video:
+       - Input: “Doja Cat, Blade Runner 2049, Death Stranding”.
+       - Results: “Quantum Nomad Siren” with images, chat, feedback, share.
+       - Analytics page.
+     - Narrate privacy, inclusivity, sustainability.
+     - Upload to YouTube/Vimeo (public, no copyrighted music).
+   - **README Update**:
+     ```markdown
+     ## Impact
+     - Inclusivity: Cultural-based style, no body metrics.
+     - Affordability: Thrift, vintage, DIY options.
+     - Global Reach: Indie brands (e.g., @SeoulVibesStudio).
+     - Sustainability: Eco-friendly fashion.
+     ## Demo Video
+     [YouTube/Vimeo link]
+     ## Screenshots
+     ![Homepage](screenshots/home.png)
+     ![Results](screenshots/results.png)
+     ![Analytics](screenshots/analytics.png)
+     ```
+   - **Pitch Deck** (optional):
+     - 5 slides: Problem, Solution, Tech, Impact, Vision.
+   - Test: Video <3 minutes, README clear, deck concise.
+
+**Testing**:
+- Moodboard: Expect images for “Doja Cat, Blade Runner 2049, Death Stranding”.
+- Chat: Verify context-aware responses, database storage.
+- Social Media: Check share alert, Instagram handle.
+- Analytics: Confirm inputs and metrics display.
+- Edge Cases: Test empty inputs, API failures.
+
+**Submission**:
+- Demo URL: Replit URL.
+- Code: GitHub repo with README, screenshots.
+- Video: 3-minute YouTube/Vimeo.
+- Submit by **Aug 1, 2025, 9:15 PM GMT+5:30**, emphasizing privacy, inclusivity, sustainability.
+
+**Constraints**:
+- Video <3 minutes.
+- No copyrighted material.
+- Verify Qloo endpoint.
+- Handle API rate limits with caching.

@@ -7,6 +7,7 @@ from app import app, db
 from models import StyleRequest, ChatMessage, PopularCulturalInput, SystemMetrics
 from services.qloo_service import get_fashion_archetypes
 from services.gemini_service import generate_style_recommendations, chat_with_stylist
+from services.unsplash_service import fetch_moodboard_images
 
 @app.route('/')
 def index():
@@ -66,6 +67,7 @@ def recommend():
         
         # Step 2: Generate style recommendations using Gemini
         style_recommendations = {}
+        moodboard_images = []
         try:
             style_recommendations = generate_style_recommendations(cultural_input, qloo_response)
             logging.info(f"Gemini recommendations: {style_recommendations}")
@@ -77,6 +79,16 @@ def recommend():
                 style_request.outfit_description = style_recommendations.get("outfit")
                 style_request.moodboard_description = style_recommendations.get("moodboard")
                 style_request.success = True
+                
+                # Step 3: Fetch moodboard images from Unsplash
+                try:
+                    moodboard_desc = style_recommendations.get("moodboard", "")
+                    if moodboard_desc:
+                        moodboard_images = fetch_moodboard_images(moodboard_desc, count=4)
+                        logging.info(f"Fetched {len(moodboard_images)} moodboard images")
+                except Exception as e:
+                    logging.warning(f"Could not fetch moodboard images: {str(e)}")
+                    moodboard_images = []
             else:
                 style_request.error_message = style_recommendations.get("error", "Unknown error")
                 
@@ -113,7 +125,8 @@ def recommend():
                              user_input=cultural_input,
                              qloo_data=qloo_response,
                              recommendations=style_recommendations,
-                             request_id=style_request.id)
+                             request_id=style_request.id,
+                             moodboard_images=moodboard_images)
     
     except Exception as e:
         logging.error(f"Unexpected error in recommend route: {str(e)}")
@@ -129,16 +142,50 @@ def recommend():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    """Optional AI stylist chat feature"""
+    """Enhanced AI stylist chat with context-aware conversations"""
     try:
-        user_message = request.form.get('message', '').strip()
-        context = request.form.get('context', '')
+        user_message = request.form.get('chat_input', '').strip()
+        style_request_id = request.form.get('style_request_id')
         
         if not user_message:
             return jsonify({'error': 'Please enter a message'})
         
-        # Generate chat response using Gemini
+        # Get style request for context
+        context = ""
+        style_request = None
+        if style_request_id:
+            style_request = StyleRequest.query.get(style_request_id)
+            if style_request:
+                context = f"Cultural Input: {style_request.cultural_input}\n"
+                context += f"Aesthetic: {style_request.aesthetic_name}\n"
+                context += f"Style: {style_request.outfit_description}\n"
+                
+                # Get previous messages for this style request
+                prev_messages = ChatMessage.query.filter_by(
+                    style_request_id=style_request_id
+                ).order_by(ChatMessage.created_at.desc()).limit(3).all()
+                
+                if prev_messages:
+                    context += "\nRecent conversation:\n"
+                    for msg in reversed(prev_messages):
+                        context += f"User: {msg.user_message}\nAI: {msg.ai_response}\n"
+        
+        # Generate chat response using Gemini with full context
         chat_response = chat_with_stylist(user_message, context)
+        
+        # Store the chat message in database
+        if style_request_id and style_request:
+            chat_message = ChatMessage(
+                style_request_id=style_request_id,
+                user_message=user_message,
+                ai_response=chat_response,
+                context=context[:1000]  # Limit context storage
+            )
+            db.session.add(chat_message)
+            db.session.commit()
+            
+            # Update chat message count in daily metrics
+            update_chat_metrics()
         
         return jsonify({
             'response': chat_response,
@@ -197,6 +244,21 @@ def update_daily_metrics(success=True, processing_time=None):
         db.session.rollback()
 
 
+def update_chat_metrics():
+    """Update chat message count in daily metrics"""
+    try:
+        today = date.today()
+        metrics = SystemMetrics.query.filter_by(date=today).first()
+        
+        if metrics:
+            metrics.chat_messages += 1
+            metrics.updated_at = datetime.utcnow()
+            db.session.commit()
+    except Exception as e:
+        logging.error(f"Error updating chat metrics: {str(e)}")
+        db.session.rollback()
+
+
 @app.route('/feedback', methods=['POST'])
 def submit_feedback():
     """Submit user feedback for a style request"""
@@ -244,6 +306,47 @@ def popular_inputs():
     except Exception as e:
         logging.error(f"Error fetching popular inputs: {str(e)}")
         return render_template('popular.html', popular_inputs=[])
+
+
+@app.route('/analytics')
+def analytics():
+    """Analytics dashboard showing trends and performance metrics"""
+    try:
+        # Get popular cultural inputs
+        popular_inputs = PopularCulturalInput.query.order_by(
+            PopularCulturalInput.request_count.desc()
+        ).limit(10).all()
+        
+        # Get recent system metrics
+        metrics = SystemMetrics.query.order_by(
+            SystemMetrics.date.desc()
+        ).limit(7).all()
+        
+        # Calculate summary stats
+        total_requests = sum(m.total_requests for m in metrics)
+        total_successful = sum(m.successful_requests for m in metrics)
+        success_rate = (total_successful / total_requests * 100) if total_requests > 0 else 0
+        
+        avg_processing_time = sum(m.avg_processing_time_ms or 0 for m in metrics) / len(metrics) if metrics else 0
+        
+        summary_stats = {
+            'total_requests': total_requests,
+            'success_rate': round(success_rate, 1),
+            'avg_processing_time': round(avg_processing_time),
+            'total_chat_messages': sum(m.chat_messages for m in metrics),
+            'unique_users': sum(m.unique_ips for m in metrics)
+        }
+        
+        return render_template('analytics.html', 
+                             popular_inputs=popular_inputs,
+                             metrics=metrics,
+                             summary_stats=summary_stats)
+    except Exception as e:
+        logging.error(f"Error fetching analytics: {str(e)}")
+        return render_template('analytics.html', 
+                             popular_inputs=[],
+                             metrics=[],
+                             summary_stats={})
 
 
 @app.errorhandler(404)
