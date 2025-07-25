@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Your Style Identity - Mimesis{% endblock %}
+
+{% block content %}
+<!-- Back button -->
+<div class="mb-6">
+    <a href="{{ url_for('index') }}" class="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium">
+        <i class="fas fa-arrow-left mr-2"></i>
+        Try Another Vibe
+    </a>
+</div>
+
+<!-- User input reminder -->
+<div class="bg-gray-50 rounded-lg p-4 mb-8">
+    <h2 class="text-lg font-semibold text-gray-900 mb-2">
+        <i class="fas fa-quote-left text-purple-600 mr-2"></i>
+        Your Cultural Input
+    </h2>
+    <p class="text-gray-700 italic">"{{ user_input }}"</p>
+</div>
+
+{% if recommendations.success %}
+<!-- Main aesthetic identity -->
+<div class="bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-lg p-8 mb-8">
+    <div class="text-center">
+        <i class="fas fa-crown text-3xl mb-4"></i>
+        <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ recommendations.aesthetic_name }}</h1>
+        <p class="text-purple-100">Your unique cultural style identity</p>
+    </div>
+</div>
+
+<!-- Recommendations grid -->
+<div class="grid lg:grid-cols-2 gap-8 mb-8">
+    <!-- Brand Suggestions -->
+    <div class="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-tags text-purple-600 mr-2"></i>
+            Curated Brands
+        </h3>
+        {% if recommendations.brands %}
+            <div class="space-y-3">
+                {% for brand in recommendations.brands %}
+                    <div class="flex items-center bg-gray-50 rounded-lg p-3">
+                        <i class="fas fa-store text-purple-500 mr-3"></i>
+                        <span class="text-gray-800 font-medium">{{ brand }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-600 italic">No brand suggestions available</p>
+        {% endif %}
+        <div class="mt-4 text-sm text-gray-600">
+            <i class="fas fa-info-circle mr-1"></i>
+            Mix of luxury, indie, thrift, and global brands
+        </div>
+    </div>
+
+    <!-- Outfit Ideas -->
+    <div class="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-tshirt text-purple-600 mr-2"></i>
+            Signature Outfit
+        </h3>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <p class="text-gray-700 leading-relaxed">{{ recommendations.outfit }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Moodboard -->
+<div class="bg-white rounded-lg shadow-lg border border-gray-200 p-6 mb-8">
+    <h3 class="text-xl font-bold text-gray-900 mb-4">
+        <i class="fas fa-palette text-purple-600 mr-2"></i>
+        Aesthetic Moodboard
+    </h3>
+    <div class="bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg p-6">
+        <p class="text-gray-700 leading-relaxed text-lg">{{ recommendations.moodboard }}</p>
+    </div>
+</div>
+
+<!-- AI Stylist Chat (Optional) -->
+<div class="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+    <h3 class="text-xl font-bold text-gray-900 mb-4">
+        <i class="fas fa-comments text-purple-600 mr-2"></i>
+        Chat with Your AI Stylist
+    </h3>
+    <form id="chat-form" class="space-y-4">
+        <input type="hidden" id="chat-context" value="{{ recommendations.aesthetic_name }} - {{ user_input }}">
+        <div class="flex space-x-3">
+            <input 
+                type="text" 
+                id="chat-message" 
+                placeholder="Ask about your style... (e.g., 'What shoes go with this aesthetic?')"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+            <button 
+                type="submit" 
+                id="chat-btn"
+                class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition duration-200"
+            >
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </form>
+    <div id="chat-response" class="mt-4 hidden">
+        <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg">
+            <p id="chat-text" class="text-gray-700"></p>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Error state -->
+<div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+    <i class="fas fa-exclamation-triangle text-red-500 text-3xl mb-4"></i>
+    <h2 class="text-xl font-bold text-red-800 mb-2">Unable to Generate Recommendations</h2>
+    <p class="text-red-700 mb-4">{{ recommendations.error or "An unexpected error occurred while processing your cultural preferences." }}</p>
+    <a href="{{ url_for('index') }}" class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition duration-200">
+        <i class="fas fa-redo mr-2"></i>
+        Try Again
+    </a>
+</div>
+{% endif %}
+
+<!-- Debug information (only shown in development) -->
+{% if config.DEBUG %}
+<div class="mt-8 bg-gray-100 rounded-lg p-4">
+    <h4 class="font-semibold text-gray-900 mb-2">Debug Information</h4>
+    <details class="text-sm">
+        <summary class="cursor-pointer text-gray-700 hover:text-gray-900">View API Responses</summary>
+        <div class="mt-2 space-y-2">
+            <div>
+                <strong>Qloo Data:</strong>
+                <pre class="bg-white p-2 rounded text-xs overflow-auto">{{ qloo_data | tojson(indent=2) }}</pre>
+            </div>
+            <div>
+                <strong>Gemini Recommendations:</strong>
+                <pre class="bg-white p-2 rounded text-xs overflow-auto">{{ recommendations | tojson(indent=2) }}</pre>
+            </div>
+        </div>
+    </details>
+</div>
+{% endif %}
+{% endblock %}
