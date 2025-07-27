@@ -50,7 +50,7 @@ Mimesis/
 
 ### Backend
 - **Framework**: Flask 3.1.1 (Python web framework)
-- **Database**: SQLite (development) / PostgreSQL (production)
+- **Database**: SQLite (default) / PostgreSQL (optional for production)
 - **ORM**: SQLAlchemy 2.0+ with Flask-SQLAlchemy
 - **API Integration**: 
   - Qloo Taste AI™ for cultural mapping
@@ -66,7 +66,7 @@ Mimesis/
 - **Package Management**: uv (modern Python package manager)
 - **Environment Management**: python-dotenv
 - **Production Server**: Gunicorn
-- **Database**: PostgreSQL with psycopg2-binary
+- **Database**: SQLite (default) / PostgreSQL (optional, requires psycopg2-binary)
 
 ## 📋 Prerequisites
 
@@ -106,7 +106,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 SESSION_SECRET=your_session_secret_here
 DATABASE_URL=sqlite:///mimesis.db
 
-# Optional: Production Database
+# Optional: Production Database (PostgreSQL)
 # DATABASE_URL=postgresql://user:password@localhost/mimesis
 ```
 
