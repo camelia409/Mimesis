@@ -37,23 +37,47 @@
 </head>
 <body class="bg-white min-h-screen">
     <!-- Navigation -->
-    <nav class="bg-white border-b border-gray-200">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
-                    <i class="fas fa-magic text-purple-600 text-2xl"></i>
-                    <span class="text-2xl font-bold text-gray-900">Mimesis</span>
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-3 sm:py-4">
+                <!-- Logo -->
+                <a href="{{ url_for('index') }}" class="flex items-center space-x-2 group">
+                    <i class="fas fa-magic text-purple-600 text-xl sm:text-2xl group-hover:scale-110 transition-transform duration-200"></i>
+                    <span class="text-xl sm:text-2xl font-bold text-gray-900">Mimesis</span>
                 </a>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('popular_inputs') }}" class="text-sm text-purple-600 hover:text-purple-700 font-medium hidden sm:flex items-center">
-                        <i class="fas fa-fire mr-1"></i>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="{{ url_for('popular_inputs') }}" class="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center transition duration-200 hover:scale-105">
+                        <i class="fas fa-fire mr-2"></i>
                         Popular
                     </a>
-                    <a href="{{ url_for('analytics') }}" class="text-sm text-purple-600 hover:text-purple-700 font-medium hidden sm:flex items-center">
-                        <i class="fas fa-chart-line mr-1"></i>
+                    <a href="{{ url_for('analytics') }}" class="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center transition duration-200 hover:scale-105">
+                        <i class="fas fa-chart-line mr-2"></i>
                         Analytics
                     </a>
-                    <p class="text-sm text-gray-600 hidden md:block">Cultural Style Intelligence</p>
+                    <p class="text-sm text-gray-600 hidden lg:block">Cultural Style Intelligence</p>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="text-gray-600 hover:text-purple-600 focus:outline-none focus:text-purple-600 transition duration-200">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mobile Navigation Menu -->
+            <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 py-4">
+                <div class="flex flex-col space-y-3">
+                    <a href="{{ url_for('popular_inputs') }}" class="text-purple-600 hover:text-purple-700 font-medium flex items-center py-2 px-3 rounded-lg hover:bg-purple-50 transition duration-200">
+                        <i class="fas fa-fire mr-3"></i>
+                        Popular Combinations
+                    </a>
+                    <a href="{{ url_for('analytics') }}" class="text-purple-600 hover:text-purple-700 font-medium flex items-center py-2 px-3 rounded-lg hover:bg-purple-50 transition duration-200">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        Analytics Dashboard
+                    </a>
                 </div>
             </div>
         </div>
@@ -62,11 +86,11 @@
     <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                        <i class="fas fa-exclamation-circle mr-2"></i>
-                        {{ message }}
+                    <div class="alert alert-{{ category }} bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center">
+                        <i class="fas fa-exclamation-circle mr-3 flex-shrink-0"></i>
+                        <span class="text-sm sm:text-base">{{ message }}</span>
                     </div>
                 {% endfor %}
             </div>
@@ -74,13 +98,13 @@
     {% endwith %}
 
     <!-- Main content -->
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-50 border-t border-gray-200 mt-16">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <footer class="bg-gray-50 border-t border-gray-200 mt-12 sm:mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <div class="text-center">
                 <p class="text-gray-600 text-sm mb-2">
                     Powered by <span class="font-semibold">Qloo Taste AI™</span> and <span class="font-semibold">Google Gemini</span>
@@ -94,5 +118,36 @@
 
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    
+    <!-- Mobile Menu Toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            var mobileMenu = document.getElementById('mobile-menu');
+            
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                    
+                    // Change icon
+                    var icon = this.querySelector('i');
+                    if (mobileMenu.classList.contains('hidden')) {
+                        icon.className = 'fas fa-bars text-xl';
+                    } else {
+                        icon.className = 'fas fa-times text-xl';
+                    }
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!mobileMenuBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
+                        mobileMenu.classList.add('hidden');
+                        var icon = mobileMenuBtn.querySelector('i');
+                        icon.className = 'fas fa-bars text-xl';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

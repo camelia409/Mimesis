@@ -3,6 +3,8 @@ import logging
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class Base(DeclarativeBase):
@@ -42,5 +44,8 @@ with app.app_context():
 
 # Import routes after app creation to avoid circular imports
 from routes import *
+
+import os
+print("QLOO_API_KEY loaded:", os.environ.get("QLOO_API_KEY"))
 
 

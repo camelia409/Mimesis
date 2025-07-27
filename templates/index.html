@@ -1,31 +1,31 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="text-center mb-12">
-    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+<div class="text-center mb-8 sm:mb-12">
+    <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
         Discover Your <span class="text-purple-600">Cultural Style</span>
     </h1>
-    <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+    <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto mb-6 sm:mb-8 px-4">
         Transform your cultural passions into personalized fashion aesthetics. 
         No body metrics, no personal data—just pure cultural intelligence.
     </p>
     
     <!-- Example tags -->
-    <div class="flex flex-wrap justify-center gap-2 mb-8">
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Music</span>
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Movies</span>
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Games</span>
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Books</span>
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Art</span>
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Shows</span>
+    <div class="flex flex-wrap justify-center gap-2 mb-6 sm:mb-8 px-4">
+        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Music</span>
+        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Movies</span>
+        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Games</span>
+        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Books</span>
+        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Art</span>
+        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Shows</span>
     </div>
 </div>
 
 <!-- Main input form -->
-<div class="bg-white rounded-lg shadow-lg border border-gray-200 p-8 mb-8">
-    <form id="cultural-form" action="{{ url_for('recommend') }}" method="POST" class="space-y-6">
+<div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+    <form id="cultural-form" action="{{ url_for('recommend') }}" method="POST" class="space-y-4 sm:space-y-6">
         <div>
-            <label for="cultural_preferences" class="block text-lg font-semibold text-gray-900 mb-3">
+            <label for="cultural_preferences" class="block text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">
                 <i class="fas fa-sparkles text-purple-600 mr-2"></i>
                 What defines your cultural vibe?
             </label>
@@ -33,11 +33,11 @@
                 id="cultural_preferences" 
                 name="cultural_preferences" 
                 rows="4" 
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 placeholder-gray-500"
+                class="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 placeholder-gray-500 text-sm sm:text-base"
                 placeholder="Doja Cat, Blade Runner 2049, Death Stranding, Japanese minimalism, indie rock, cyberpunk aesthetic..."
                 required
             ></textarea>
-            <p class="text-sm text-gray-600 mt-2">
+            <p class="text-xs sm:text-sm text-gray-600 mt-2">
                 <i class="fas fa-lightbulb text-yellow-500 mr-1"></i>
                 Mix artists, movies, games, books, genres, or any cultural influences that resonate with you
             </p>
@@ -46,7 +46,7 @@
         <button 
             type="submit" 
             id="submit-btn"
-            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 sm:py-4 px-4 sm:px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 text-sm sm:text-base"
         >
             <span id="btn-text">
                 <i class="fas fa-magic mr-2"></i>
@@ -61,49 +61,89 @@
 </div>
 
 <!-- Examples section -->
-<div class="bg-gray-50 rounded-lg p-6">
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+<div class="bg-gray-50 rounded-xl p-4 sm:p-6">
+    <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
         <i class="fas fa-palette text-purple-600 mr-2"></i>
         Example Cultural Combinations
     </h3>
-    <div class="grid md:grid-cols-2 gap-4">
-        <div class="bg-white p-4 rounded-lg border">
-            <h4 class="font-medium text-gray-900 mb-2">Neo-Futuristic Minimalist</h4>
-            <p class="text-sm text-gray-600 mb-2">Blade Runner 2049, Aphex Twin, Japanese architecture, The Matrix</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div class="bg-white p-3 sm:p-4 rounded-lg border hover:shadow-md transition duration-200">
+            <h4 class="font-medium text-gray-900 mb-2 text-sm sm:text-base">Neo-Futuristic Minimalist</h4>
+            <p class="text-xs sm:text-sm text-gray-600 mb-2">Blade Runner 2049, Aphex Twin, Japanese architecture, The Matrix</p>
             <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">→ "Cyber-Zen Aesthetic"</span>
         </div>
-        <div class="bg-white p-4 rounded-lg border">
-            <h4 class="font-medium text-gray-900 mb-2">Retro Soul Vibes</h4>
-            <p class="text-sm text-gray-600 mb-2">SZA, Red Dead Redemption, vintage photography, 70s cinema</p>
+        <div class="bg-white p-3 sm:p-4 rounded-lg border hover:shadow-md transition duration-200">
+            <h4 class="font-medium text-gray-900 mb-2 text-sm sm:text-base">Retro Soul Vibes</h4>
+            <p class="text-xs sm:text-sm text-gray-600 mb-2">SZA, Red Dead Redemption, vintage photography, 70s cinema</p>
             <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">→ "Desert Soul Muse"</span>
         </div>
     </div>
 </div>
 
 <!-- Features highlight -->
-<div class="mt-12 text-center">
-    <div class="grid md:grid-cols-3 gap-8">
-        <div class="flex flex-col items-center">
+<div class="mt-8 sm:mt-12 text-center">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div class="flex flex-col items-center p-4">
             <div class="bg-purple-100 p-3 rounded-full mb-3">
-                <i class="fas fa-shield-alt text-purple-600 text-xl"></i>
+                <i class="fas fa-shield-alt text-purple-600 text-lg sm:text-xl"></i>
             </div>
-            <h3 class="font-semibold text-gray-900 mb-2">Privacy First</h3>
-            <p class="text-sm text-gray-600">No body metrics, income data, or personal information required</p>
+            <h3 class="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Privacy First</h3>
+            <p class="text-xs sm:text-sm text-gray-600">No body metrics, income data, or personal information required</p>
         </div>
-        <div class="flex flex-col items-center">
+        <div class="flex flex-col items-center p-4">
             <div class="bg-purple-100 p-3 rounded-full mb-3">
-                <i class="fas fa-globe text-purple-600 text-xl"></i>
+                <i class="fas fa-globe text-purple-600 text-lg sm:text-xl"></i>
             </div>
-            <h3 class="font-semibold text-gray-900 mb-2">Globally Inclusive</h3>
-            <p class="text-sm text-gray-600">Brands and styles from every culture and budget range</p>
+            <h3 class="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Globally Inclusive</h3>
+            <p class="text-xs sm:text-sm text-gray-600">Brands and styles from every culture and budget range</p>
         </div>
-        <div class="flex flex-col items-center">
+        <div class="flex flex-col items-center p-4 sm:col-span-2 lg:col-span-1">
             <div class="bg-purple-100 p-3 rounded-full mb-3">
-                <i class="fas fa-recycle text-purple-600 text-xl"></i>
+                <i class="fas fa-recycle text-purple-600 text-lg sm:text-xl"></i>
             </div>
-            <h3 class="font-semibold text-gray-900 mb-2">Sustainable Focus</h3>
-            <p class="text-sm text-gray-600">Thrift, vintage, indie, and DIY options prioritized</p>
+            <h3 class="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Sustainable Focus</h3>
+            <p class="text-xs sm:text-sm text-gray-600">Thrift, vintage, indie, and DIY options prioritized</p>
         </div>
     </div>
 </div>
+
+<script>
+// Handle popular input from sessionStorage
+document.addEventListener('DOMContentLoaded', function() {
+    var popularInput = sessionStorage.getItem('popularInput');
+    if (popularInput) {
+        var textarea = document.getElementById('cultural_preferences');
+        if (textarea) {
+            textarea.value = popularInput;
+            textarea.focus();
+            sessionStorage.removeItem('popularInput');
+            
+            // Trigger input event for validation
+            textarea.dispatchEvent(new Event('input'));
+            
+            // Scroll to the form
+            textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+});
+
+// Form submission handling
+document.getElementById('cultural-form').addEventListener('submit', function(e) {
+    var submitBtn = document.getElementById('submit-btn');
+    var btnText = document.getElementById('btn-text');
+    var btnLoading = document.getElementById('btn-loading');
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    btnText.classList.add('hidden');
+    btnLoading.classList.remove('hidden');
+});
+
+// Auto-resize textarea
+document.getElementById('cultural_preferences').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+});
+</script>
+
 {% endblock %}

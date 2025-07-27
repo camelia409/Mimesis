@@ -7,7 +7,6 @@ from app import app, db
 from models import StyleRequest, ChatMessage, PopularCulturalInput, SystemMetrics
 from services.qloo_service import get_fashion_archetypes
 from services.gemini_service import generate_style_recommendations, chat_with_stylist
-from services.unsplash_service import fetch_moodboard_images
 
 @app.route('/')
 def index():
@@ -67,7 +66,6 @@ def recommend():
         
         # Step 2: Generate style recommendations using Gemini
         style_recommendations = {}
-        moodboard_images = []
         try:
             style_recommendations = generate_style_recommendations(cultural_input, qloo_response)
             logging.info(f"Gemini recommendations: {style_recommendations}")
@@ -79,16 +77,6 @@ def recommend():
                 style_request.outfit_description = style_recommendations.get("outfit")
                 style_request.moodboard_description = style_recommendations.get("moodboard")
                 style_request.success = True
-                
-                # Step 3: Fetch moodboard images from Unsplash
-                try:
-                    moodboard_desc = style_recommendations.get("moodboard", "")
-                    if moodboard_desc:
-                        moodboard_images = fetch_moodboard_images(moodboard_desc, count=4)
-                        logging.info(f"Fetched {len(moodboard_images)} moodboard images")
-                except Exception as e:
-                    logging.warning(f"Could not fetch moodboard images: {str(e)}")
-                    moodboard_images = []
             else:
                 style_request.error_message = style_recommendations.get("error", "Unknown error")
                 
@@ -125,8 +113,7 @@ def recommend():
                              user_input=cultural_input,
                              qloo_data=qloo_response,
                              recommendations=style_recommendations,
-                             request_id=style_request.id,
-                             moodboard_images=moodboard_images)
+                             request_id=style_request.id)
     
     except Exception as e:
         logging.error(f"Unexpected error in recommend route: {str(e)}")
@@ -195,7 +182,7 @@ def chat():
     except Exception as e:
         logging.error(f"Chat error: {str(e)}")
         return jsonify({
-            'error': 'Unable to process your message. Please try again.',
+            'error': 'I\'m having trouble responding right now. Please try again!',
             'status': 'error'
         })
 

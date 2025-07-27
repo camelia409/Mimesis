@@ -3,123 +3,146 @@
 {% block title %}Popular Cultural Combinations - Mimesis{% endblock %}
 
 {% block content %}
-<div class="text-center mb-8">
-    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-        <i class="fas fa-fire text-orange-500 mr-3"></i>
-        Popular Cultural Combinations
-    </h1>
-    <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-        Discover what cultural combinations other users love. Get inspired by trending aesthetic inputs.
-    </p>
-</div>
-
-<!-- Back to main -->
-<div class="mb-6">
-    <a href="{{ url_for('index') }}" class="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium">
-        <i class="fas fa-arrow-left mr-2"></i>
-        Create Your Own Style
-    </a>
-</div>
-
-{% if popular_inputs %}
-<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-    {% for input in popular_inputs %}
-    <div class="bg-white rounded-lg shadow-lg border border-gray-200 p-6 hover:shadow-xl transition duration-200 cursor-pointer" 
-         onclick="useInput('{{ input.cultural_input|e }}')">
-        
-        <!-- Request count badge -->
-        <div class="flex justify-between items-start mb-4">
-            <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-                <i class="fas fa-users mr-1"></i>
-                {{ input.request_count }} {% if input.request_count == 1 %}user{% else %}users{% endif %}
-            </span>
-            {% if input.avg_rating %}
-            <div class="flex items-center text-yellow-500">
-                <i class="fas fa-star mr-1"></i>
-                <span class="text-sm font-medium text-gray-700">{{ "%.1f"|format(input.avg_rating) }}</span>
-            </div>
-            {% endif %}
-        </div>
-        
-        <!-- Cultural input -->
-        <div class="mb-4">
-            <p class="text-gray-800 font-medium leading-relaxed">
-                "{{ input.cultural_input }}"
-            </p>
-        </div>
-        
-        <!-- Last used -->
-        <div class="text-xs text-gray-500 flex items-center">
-            <i class="fas fa-clock mr-1"></i>
-            Last used {{ input.last_requested.strftime('%B %d') if input.last_requested else 'recently' }}
-        </div>
-        
-        <!-- Click hint -->
-        <div class="mt-4 pt-4 border-t border-gray-100">
-            <p class="text-sm text-purple-600 font-medium">
-                <i class="fas fa-mouse-pointer mr-1"></i>
-                Click to try this combination
-            </p>
-        </div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <!-- Header -->
+    <div class="text-center">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-fire text-orange-500 mr-3"></i>
+            Popular Cultural Combinations
+        </h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+            Discover what cultural combinations other users love. Get inspired by trending aesthetic inputs.
+        </p>
     </div>
-    {% endfor %}
-</div>
 
-<!-- Try your own section -->
-<div class="mt-12 text-center bg-purple-50 rounded-lg p-8">
-    <h3 class="text-xl font-bold text-gray-900 mb-4">
-        Don't see your vibe here?
-    </h3>
-    <p class="text-gray-600 mb-6">
-        Create your own unique cultural combination and discover your personal aesthetic identity.
-    </p>
-    <a href="{{ url_for('index') }}" 
-       class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-200 inline-flex items-center">
-        <i class="fas fa-magic mr-2"></i>
-        Create My Style Identity
-    </a>
-</div>
+    <!-- Back to main -->
+    <div class="mb-6">
+        <a href="{{ url_for('index') }}" class="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium transition duration-200">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Create Your Own Style
+        </a>
+    </div>
 
-{% else %}
-<!-- Empty state -->
-<div class="text-center py-12">
-    <i class="fas fa-chart-line text-gray-400 text-6xl mb-6"></i>
-    <h3 class="text-xl font-bold text-gray-900 mb-4">
-        No Popular Combinations Yet
-    </h3>
-    <p class="text-gray-600 mb-8 max-w-md mx-auto">
-        Be the first to explore cultural style combinations! Your preferences will help inspire others.
-    </p>
-    <a href="{{ url_for('index') }}" 
-       class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-200 inline-flex items-center">
-        <i class="fas fa-rocket mr-2"></i>
-        Start Exploring
-    </a>
+    {% if popular_inputs %}
+    <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {% for input in popular_inputs %}
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition duration-200 cursor-pointer transform hover:scale-105 popular-card" 
+             data-cultural-input="{{ input.cultural_input|e }}">
+            
+            <!-- Request count badge -->
+            <div class="flex justify-between items-start mb-4">
+                <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
+                    <i class="fas fa-users mr-1"></i>
+                    {{ input.request_count }} {% if input.request_count == 1 %}user{% else %}users{% endif %}
+                </span>
+                {% if input.avg_rating %}
+                <div class="flex items-center text-yellow-500">
+                    <i class="fas fa-star mr-1"></i>
+                    <span class="text-sm font-medium text-gray-700">{{ "%.1f"|format(input.avg_rating) }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Cultural input -->
+            <div class="mb-4 min-h-[4rem]">
+                <p class="text-gray-800 font-medium leading-relaxed break-words">
+                    "{{ input.cultural_input }}"
+                </p>
+            </div>
+            
+            <!-- Last used -->
+            <div class="text-xs text-gray-500 flex items-center mb-4">
+                <i class="fas fa-clock mr-1"></i>
+                Last used {{ input.last_requested.strftime('%B %d') if input.last_requested else 'recently' }}
+            </div>
+            
+            <!-- Click hint -->
+            <div class="pt-4 border-t border-gray-100">
+                <p class="text-sm text-purple-600 font-medium">
+                    <i class="fas fa-mouse-pointer mr-1"></i>
+                    Click to try this combination
+                </p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Try your own section -->
+    <div class="mt-12 text-center bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-8 border border-purple-200">
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">
+            Don't see your vibe here?
+        </h3>
+        <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
+            Create your own unique cultural combination and discover your personal aesthetic identity.
+        </p>
+        <a href="{{ url_for('index') }}" 
+           class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-lg font-semibold transition duration-200 inline-flex items-center shadow-lg hover:shadow-xl transform hover:scale-105">
+            <i class="fas fa-magic mr-3"></i>
+            Create My Style Identity
+        </a>
+    </div>
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="text-center py-16">
+        <i class="fas fa-chart-line text-gray-400 text-6xl mb-6"></i>
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">
+            No Popular Combinations Yet
+        </h3>
+        <p class="text-gray-600 mb-8 max-w-md mx-auto">
+            Be the first to explore cultural style combinations! Your preferences will help inspire others.
+        </p>
+        <a href="{{ url_for('index') }}" 
+           class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-lg font-semibold transition duration-200 inline-flex items-center shadow-lg hover:shadow-xl transform hover:scale-105">
+            <i class="fas fa-rocket mr-3"></i>
+            Start Exploring
+        </a>
+    </div>
+    {% endif %}
 </div>
-{% endif %}
 
 <script>
 // Function to use a popular input
 function useInput(culturalInput) {
-    // Store the input and redirect to main page
-    sessionStorage.setItem('popularInput', culturalInput);
-    window.location.href = '{{ url_for("index") }}';
+    try {
+        // Store the input and redirect to main page
+        sessionStorage.setItem('popularInput', culturalInput);
+        
+        // Show loading feedback
+        var card = event.currentTarget;
+        card.style.opacity = '0.7';
+        card.style.pointerEvents = 'none';
+        
+        // Add loading text
+        var loadingText = document.createElement('div');
+        loadingText.className = 'text-purple-600 text-sm font-medium mt-2';
+        loadingText.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Loading...';
+        card.appendChild(loadingText);
+        
+        // Redirect after a brief delay to show feedback
+        setTimeout(function() {
+            window.location.href = '{{ url_for("index") }}';
+        }, 500);
+        
+    } catch (error) {
+        console.error('Error using popular input:', error);
+        // Fallback: redirect without sessionStorage
+        window.location.href = '{{ url_for("index") }}';
+    }
 }
 
-// On main page, check if we have a popular input to use
+// Add click event listeners to all cards
 document.addEventListener('DOMContentLoaded', function() {
-    const popularInput = sessionStorage.getItem('popularInput');
-    if (popularInput && window.location.pathname === '/') {
-        const textarea = document.getElementById('cultural_preferences');
-        if (textarea) {
-            textarea.value = popularInput;
-            textarea.focus();
-            sessionStorage.removeItem('popularInput');
-            
-            // Trigger input event for validation
-            textarea.dispatchEvent(new Event('input'));
-        }
-    }
+    var cards = document.querySelectorAll('.popular-card');
+    cards.forEach(function(card) {
+        card.addEventListener('click', function(e) {
+            var culturalInput = this.getAttribute('data-cultural-input');
+            if (culturalInput) {
+                e.preventDefault();
+                useInput(culturalInput);
+            }
+        });
+    });
 });
 </script>
 
