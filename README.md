@@ -33,8 +33,7 @@ Mimesis/
 ├── models.py             # Database models and schemas
 ├── services/             # External API integrations
 │   ├── qloo_service.py   # Qloo Taste AI™ integration
-│   ├── gemini_service.py # Google Gemini API integration
-│   └── unsplash_service.py # Unsplash image API integration
+│   └── gemini_service.py # Google Gemini API integration
 ├── templates/            # HTML templates
 ├── static/               # CSS, JS, and static assets
 └── instance/             # Database and instance files
@@ -56,7 +55,6 @@ Mimesis/
 - **API Integration**: 
   - Qloo Taste AI™ for cultural mapping
   - Google Gemini 2.5 Flash for style generation
-  - Unsplash API for moodboard images
 
 ### Frontend
 - **Styling**: Tailwind CSS (via CDN)
@@ -75,7 +73,6 @@ Mimesis/
 - Python 3.11+
 - Qloo API Key (for cultural taste analysis)
 - Google Gemini API Key (for style generation)
-- Unsplash API Key (for moodboard images)
 - Internet connection for CDN resources
 
 ## 🚀 Installation & Setup
@@ -104,7 +101,6 @@ Create a `.env` file in the project root:
 # API Keys
 QLOO_API_KEY=your_qloo_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
-UNSPLASH_API_KEY=your_unsplash_api_key_here
 
 # Application Settings
 SESSION_SECRET=your_session_secret_here
@@ -142,9 +138,7 @@ The application will be available at `http://localhost:5000`
   - Chat functionality in `/chat`
 - **Features**: Aesthetic naming, brand suggestions, outfit descriptions, moodboards
 
-### Unsplash API
-- **Purpose**: Moodboard image generation
-- **Integration**: Automatic image selection based on generated themes
+
 
 ## 📊 Analytics & Monitoring
 
@@ -185,7 +179,6 @@ DATABASE_URL=postgresql://user:password@host:port/database
 SESSION_SECRET=your_secure_session_secret
 QLOO_API_KEY=your_qloo_api_key
 GEMINI_API_KEY=your_gemini_api_key
-UNSPLASH_API_KEY=your_unsplash_api_key
 ```
 
 ## 🔒 Privacy & Security
@@ -212,7 +205,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - **Qloo**: For providing the Taste AI™ API for cultural preference analysis
 - **Google**: For the Gemini API enabling advanced AI-powered style recommendations
-- **Unsplash**: For providing high-quality images for moodboards
 - **Flask Community**: For the excellent web framework
 - **Tailwind CSS**: For the utility-first CSS framework
 
