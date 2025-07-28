@@ -156,6 +156,8 @@ Access analytics at `/analytics` to view:
 - User engagement statistics
 - API usage patterns
 
+
+
 ## 🚀 Deployment
 
 ### Local Development
@@ -167,10 +169,6 @@ python main.py
 ```bash
 # Using Gunicorn
 gunicorn -w 4 -b 0.0.0.0:5000 main:app
-
-# Using Docker (if Dockerfile is added)
-docker build -t mimesis .
-docker run -p 5000:5000 mimesis
 ```
 
 ### Environment Variables for Production

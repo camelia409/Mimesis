@@ -3,26 +3,26 @@
 {% block title %}Analytics Dashboard - Mimesis{% endblock %}
 
 {% block content %}
-<div class="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="space-y-4 sm:space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Header -->
     <div class="text-center">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            <i class="fas fa-chart-line text-purple-600 mr-3"></i>
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+            <i class="fas fa-chart-line text-purple-600 mr-2 sm:mr-3"></i>
             Style Analytics Dashboard
         </h1>
-        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        <p class="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-2">
             Discover trending cultural combinations and system performance insights
         </p>
     </div>
 
     <!-- Navigation -->
-    <div class="flex flex-wrap justify-center gap-4 mb-8">
-        <a href="{{ url_for('index') }}" class="text-purple-600 hover:text-purple-700 font-medium transition duration-200">
-            <i class="fas fa-arrow-left mr-2"></i>Create Style
+    <div class="flex flex-wrap justify-center gap-2 sm:gap-4 mb-6 sm:mb-8">
+        <a href="{{ url_for('index') }}" class="text-purple-600 hover:text-purple-700 font-medium transition duration-200 text-sm sm:text-base">
+            <i class="fas fa-arrow-left mr-1 sm:mr-2"></i>Create Style
         </a>
         <span class="text-gray-300 hidden sm:inline">|</span>
-        <a href="{{ url_for('popular_inputs') }}" class="text-purple-600 hover:text-purple-700 font-medium transition duration-200">
-            <i class="fas fa-fire mr-2"></i>Popular Combinations
+        <a href="{{ url_for('popular_inputs') }}" class="text-purple-600 hover:text-purple-700 font-medium transition duration-200 text-sm sm:text-base">
+            <i class="fas fa-fire mr-1 sm:mr-2"></i>Popular Combinations
         </a>
     </div>
 
@@ -93,6 +93,44 @@
                 <i class="fas fa-chart-bar text-gray-400 text-4xl mb-4"></i>
                 <p class="text-gray-600 font-medium">No popular combinations yet</p>
                 <p class="text-sm text-gray-500 mt-2">Start creating styles to see trends!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Cultural Trend Analysis -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <i class="fas fa-trending-up text-green-500 mr-3"></i>
+                Cultural Trend Analysis
+            </h2>
+            
+            {% if cultural_trends %}
+            <div class="space-y-4 max-h-96 overflow-y-auto">
+                {% for trend in cultural_trends %}
+                <div class="border-l-4 border-green-500 bg-green-50 p-4 rounded-r-lg hover:bg-green-100 transition duration-200">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+                        <div class="flex-1 min-w-0">
+                            <span class="font-medium text-gray-800 text-sm break-words">
+                                {{ loop.index }}. {{ trend.cultural_element }}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap">
+                                {{ trend.mention_count }} mention{{ 's' if trend.mention_count != 1 else '' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        First seen: {{ trend.first_seen.strftime('%B %d, %Y') if trend.first_seen else 'Recently' }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-chart-line text-gray-400 text-4xl mb-4"></i>
+                <p class="text-gray-600 font-medium">No cultural trends yet</p>
+                <p class="text-sm text-gray-500 mt-2">Start creating styles to see trending elements!</p>
             </div>
             {% endif %}
         </div>

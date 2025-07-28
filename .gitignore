@@ -307,11 +307,7 @@ poetry.lock
 # uv
 .uv/
 
-# Docker
-.dockerignore
-Dockerfile
-docker-compose.yml
-docker-compose.override.yml
+
 
 # Kubernetes
 *.yaml

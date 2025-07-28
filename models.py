@@ -1,17 +1,55 @@
 from app import db
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
+from flask_login import UserMixin
 
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     """User model for storing user preferences and sessions"""
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=True)
-    email = db.Column(db.String(120), unique=True, nullable=True)
+    username = db.Column(db.String(64), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)  # Nullable for OAuth users
+    google_id = db.Column(db.String(100), unique=True, nullable=True)  # Google OAuth ID
+    profile_picture = db.Column(db.String(500), nullable=True)  # Profile picture URL
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Style history for personalization
+    style_history = db.Column(db.Text, default="[]")  # JSON string of past inputs
     
     # User relationships
     style_requests = db.relationship('StyleRequest', backref='user', lazy=True)
+    
+    def get_style_history(self):
+        """Get user's style history as a list"""
+        import json
+        try:
+            return json.loads(self.style_history)
+        except (json.JSONDecodeError, TypeError):
+            return []
+    
+    def add_to_history(self, cultural_input, aesthetic_name):
+        """Add a new style request to user's history"""
+        import json
+        history = self.get_style_history()
+        history.append({
+            "input": cultural_input,
+            "aesthetic": aesthetic_name,
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        # Keep only last 10 entries
+        self.style_history = json.dumps(history[-10:])
+        db.session.commit()
+    
+    def set_password(self, password):
+        """Hash and set password"""
+        from werkzeug.security import generate_password_hash
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        """Check if provided password matches hash"""
+        from werkzeug.security import check_password_hash
+        return check_password_hash(self.password_hash, password)
 
 
 class StyleRequest(db.Model):
@@ -94,3 +132,16 @@ class SystemMetrics(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class CulturalTrend(db.Model):
+    """Model for tracking individual cultural elements and their trends"""
+    id = db.Column(db.Integer, primary_key=True)
+    cultural_element = db.Column(db.String(255), unique=True, nullable=False)
+    mention_count = db.Column(db.Integer, default=1)
+    first_seen = db.Column(db.DateTime, default=datetime.utcnow)
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def increment_count(self):
+        self.mention_count += 1
+        self.last_seen = datetime.utcnow()
