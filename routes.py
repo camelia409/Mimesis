@@ -219,6 +219,9 @@ def google_callback():
     
     userinfo = userinfo_response.json()
     
+    # Debug: Print userinfo to console
+    print(f"Google OAuth Debug - Userinfo: {userinfo}")
+    
     # You want to make sure their email is verified.
     # The user submitted a non-Google email address, so you cannot
     # log them in.
@@ -227,6 +230,12 @@ def google_callback():
         users_email = userinfo["email"]
         users_name = userinfo["given_name"]
         users_picture = userinfo.get("picture", "")
+        
+        # Debug: Print extracted values
+        print(f"Google OAuth Debug - Unique ID: {unique_id}")
+        print(f"Google OAuth Debug - Email: {users_email}")
+        print(f"Google OAuth Debug - Name: {users_name}")
+        print(f"Google OAuth Debug - Picture URL: {users_picture}")
     else:
         flash("User email not available or not verified by Google.", "error")
         return redirect(url_for('login'))
@@ -251,8 +260,18 @@ def google_callback():
         )
         db.session.add(user)
         db.session.commit()
+        
+        # Debug: Print created user info
+        print(f"Google OAuth Debug - Created new user with profile picture: {user.profile_picture}")
+        
         flash('Account created successfully with Google!', 'success')
     else:
+        # Update existing user's profile picture if it's different
+        if user.profile_picture != users_picture:
+            user.profile_picture = users_picture
+            db.session.commit()
+            print(f"Google OAuth Debug - Updated existing user profile picture: {user.profile_picture}")
+        
         flash('Welcome back!', 'success')
     
     # Begin user session by logging the user in
@@ -267,6 +286,13 @@ def profile():
     """User profile with style history"""
     style_history = current_user.get_style_history()
     recent_requests = StyleRequest.query.filter_by(user_id=current_user.id).order_by(StyleRequest.created_at.desc()).limit(5).all()
+    
+    # Debug: Print user info to console
+    print(f"Profile Debug - User ID: {current_user.id}")
+    print(f"Profile Debug - Username: {current_user.username}")
+    print(f"Profile Debug - Email: {current_user.email}")
+    print(f"Profile Debug - Google ID: {current_user.google_id}")
+    print(f"Profile Debug - Profile Picture: {current_user.profile_picture}")
     
     return render_template('profile.html', 
                          user=current_user, 
@@ -564,13 +590,57 @@ def submit_feedback():
 def popular_inputs():
     """Show popular cultural combinations"""
     try:
+        # Debug: Check database connection
+        print("Popular Debug: Attempting to fetch popular inputs...")
+        
+        # Check if table exists and has data
+        popular_count = PopularCulturalInput.query.count()
+        print(f"Popular Debug: Found {popular_count} popular inputs in database")
+        
+        # If no data exists, create some sample data
+        if popular_count == 0:
+            print("Popular Debug: No data found, creating sample data...")
+            sample_data = [
+                PopularCulturalInput(
+                    cultural_input="AR Rahman, Radhe Shyam, Chess, 20s cinema, vintage",
+                    request_count=5,
+                    last_requested=datetime.utcnow(),
+                    avg_rating=4.5
+                ),
+                PopularCulturalInput(
+                    cultural_input="Bollywood, classical music, street art, sustainable fashion",
+                    request_count=3,
+                    last_requested=datetime.utcnow(),
+                    avg_rating=4.2
+                ),
+                PopularCulturalInput(
+                    cultural_input="Jazz, vintage photography, French cinema, minimalist design",
+                    request_count=2,
+                    last_requested=datetime.utcnow(),
+                    avg_rating=4.0
+                )
+            ]
+            
+            for item in sample_data:
+                db.session.add(item)
+            db.session.commit()
+            print("Popular Debug: Sample data created successfully")
+        
         popular = PopularCulturalInput.query.order_by(
             PopularCulturalInput.request_count.desc()
         ).limit(10).all()
         
+        print(f"Popular Debug: Retrieved {len(popular)} popular inputs")
+        
+        # Debug: Print first few items
+        for i, item in enumerate(popular[:3]):
+            print(f"Popular Debug: Item {i+1} - Input: {item.cultural_input}, Count: {item.request_count}")
+        
         return render_template('popular.html', popular_inputs=popular)
     except Exception as e:
         logging.error(f"Error fetching popular inputs: {str(e)}")
+        print(f"Popular Debug: Exception occurred - {str(e)}")
+        # Return empty list but don't crash
         return render_template('popular.html', popular_inputs=[])
 
 

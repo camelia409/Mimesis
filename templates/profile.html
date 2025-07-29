@@ -1,222 +1,240 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Profile - Mimesis</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        [data-theme="high-contrast"] {
-            filter: invert(90%) hue-rotate(180deg);
-        }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-purple-50 to-pink-50 min-h-screen" data-theme="normal">
-    <div class="container mx-auto px-4 py-4 sm:py-6 md:py-8">
-        <!-- Header -->
-        <div class="max-w-4xl mx-auto">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 space-y-4 sm:space-y-0">
-                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800" aria-label="Your Profile">
-                    Your Profile
-                </h1>
-                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-                    <a href="{{ url_for('index') }}" 
-                       class="bg-purple-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-sm sm:text-base"
-                       aria-label="Go to home page">
-                        Home
-                    </a>
-                    <a href="{{ url_for('logout') }}" 
-                       class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-center text-sm sm:text-base"
-                       aria-label="Logout">
-                        Logout
-                    </a>
-                </div>
-            </div>
+{% extends "base.html" %}
 
-            <!-- User Info -->
-            <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
-                <div class="flex items-center space-x-3 sm:space-x-4">
+{% block title %}Your Profile - Mimesis{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-16">
+            <div class="w-24 h-24 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-glow">
+                <i class="fas fa-user text-white text-4xl"></i>
+            </div>
+            <h1 class="text-5xl font-black text-gradient font-space mb-8">Your Profile</h1>
+            <p class="text-2xl text-white/70 max-w-4xl mx-auto leading-relaxed">
+                Manage your style identity, track your cultural journey, and discover your unique aesthetic preferences.
+            </p>
+        </div>
+
+        <!-- User Info Card -->
+        <div class="glass-effect rounded-3xl p-8 border border-white/10 card-hover mb-16">
+            <div class="flex flex-col lg:flex-row items-center lg:items-start space-y-8 lg:space-y-0 lg:space-x-8">
+                <!-- Profile Picture -->
+                <div class="flex-shrink-0">
                     {% if user.profile_picture %}
                         <img src="{{ user.profile_picture }}" 
                              alt="Profile picture" 
-                             class="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-purple-200"
+                             class="w-32 h-32 rounded-full object-cover border-4 border-white/20 shadow-2xl"
                              aria-label="User profile picture">
                     {% else %}
-                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-                            <span class="text-white text-lg sm:text-2xl font-bold" aria-label="User avatar">
+                        <div class="w-32 h-32 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-2xl animate-glow">
+                            <span class="text-white text-4xl font-bold" aria-label="User avatar">
                                 {{ user.username[0].upper() }}
                             </span>
                         </div>
                     {% endif %}
-                    <div>
-                        <h2 class="text-xl sm:text-2xl font-semibold text-gray-800" aria-label="Username">
-                            {{ user.username }}
-                        </h2>
-                        <p class="text-sm sm:text-base text-gray-600" aria-label="Email address">
-                            {{ user.email }}
-                        </p>
-                        <p class="text-xs sm:text-sm text-gray-500" aria-label="Member since">
-                            Member since {{ user.created_at.strftime('%B %Y') }}
-                        </p>
-                    </div>
                 </div>
-            </div>
-
-            <!-- Style History -->
-            <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
-                <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4" aria-label="Your Style History">
-                    Your Style History
-                </h3>
                 
-                {% if style_history %}
-                    <div class="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {% for entry in style_history %}
-                            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                                <div class="flex justify-between items-start mb-2">
-                                    <h4 class="font-medium text-gray-800 text-sm sm:text-base" aria-label="Aesthetic name">
-                                        {{ entry.aesthetic }}
-                                    </h4>
-                                    <span class="text-xs text-gray-500" aria-label="Date">
-                                        {{ entry.timestamp.split('T')[0] if entry.timestamp else 'Recent' }}
-                                    </span>
-                                </div>
-                                <p class="text-xs sm:text-sm text-gray-600 mb-2" aria-label="Cultural input">
-                                    <strong>Input:</strong> {{ entry.input }}
-                                </p>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-6 sm:py-8">
-                        <p class="text-gray-500 text-sm sm:text-base" aria-label="No style history yet">
-                            No style history yet. Start by generating your first style recommendation!
-                        </p>
-                        <a href="{{ url_for('index') }}" 
-                           class="mt-3 sm:mt-4 inline-block bg-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
-                           aria-label="Generate your first style">
-                            Generate Your First Style
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
-
-            <!-- Recent Requests -->
-            <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
-                <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4" aria-label="Recent Style Requests">
-                    Recent Style Requests
-                </h3>
-                
-                {% if recent_requests %}
-                    <div class="space-y-3 sm:space-y-4">
-                        {% for request in recent_requests %}
-                            <div class="border border-gray-200 rounded-lg p-3 sm:p-4">
-                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-2 sm:space-y-0">
-                                    <div class="flex-1">
-                                        <h4 class="font-medium text-gray-800 mb-1 text-sm sm:text-base" aria-label="Cultural input">
-                                            {{ request.cultural_input }}
-                                        </h4>
-                                        {% if request.aesthetic_name %}
-                                            <p class="text-xs sm:text-sm text-purple-600 mb-1" aria-label="Generated aesthetic">
-                                                <strong>Aesthetic:</strong> {{ request.aesthetic_name }}
-                                            </p>
-                                        {% endif %}
-                                        <p class="text-xs text-gray-500" aria-label="Request date">
-                                            {{ request.created_at.strftime('%B %d, %Y at %I:%M %p') }}
-                                        </p>
-                                    </div>
-                                    <div class="sm:ml-4">
-                                        {% if request.success %}
-                                            <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full" aria-label="Success">
-                                                Success
-                                            </span>
-                                        {% else %}
-                                            <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full" aria-label="Failed">
-                                                Failed
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-gray-500 text-center py-4 text-sm sm:text-base" aria-label="No recent requests">
-                        No recent style requests.
+                <!-- User Details -->
+                <div class="flex-1 text-center lg:text-left">
+                    <h2 class="text-4xl font-bold text-white mb-4" aria-label="Username">
+                        {{ user.username }}
+                    </h2>
+                    <p class="text-xl text-white/70 mb-3" aria-label="Email address">
+                        <i class="fas fa-envelope mr-3 text-purple-400"></i>
+                        {{ user.email }}
                     </p>
-                {% endif %}
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-                <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4" aria-label="Quick Actions">
-                    Quick Actions
-                </h3>
-                <div class="grid gap-3 sm:gap-4 md:grid-cols-3">
-                    <a href="{{ url_for('index') }}" 
-                       class="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3 sm:p-4 rounded-lg text-center hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition duration-200"
-                       aria-label="Generate new style recommendation">
-                        <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🎨</div>
-                        <div class="font-semibold text-sm sm:text-base">New Style</div>
-                        <div class="text-xs sm:text-sm opacity-90">Generate recommendation</div>
-                    </a>
-                    <a href="{{ url_for('analytics') }}" 
-                       class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 sm:p-4 rounded-lg text-center hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                       aria-label="View analytics and trends">
-                        <div class="text-xl sm:text-2xl mb-1 sm:mb-2">📊</div>
-                        <div class="font-semibold text-sm sm:text-base">Analytics</div>
-                        <div class="text-xs sm:text-sm opacity-90">View trends</div>
-                    </a>
-                    <a href="{{ url_for('popular_inputs') }}" 
-                       class="bg-gradient-to-r from-green-600 to-teal-600 text-white p-3 sm:p-4 rounded-lg text-center hover:from-green-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200"
-                       aria-label="View popular cultural inputs">
-                        <div class="text-xl sm:text-2xl mb-1 sm:mb-2">🔥</div>
-                        <div class="font-semibold text-sm sm:text-base">Popular</div>
-                        <div class="text-xs sm:text-sm opacity-90">Trending inputs</div>
-                    </a>
+                    <p class="text-lg text-white/60 mb-6" aria-label="Member since">
+                        <i class="fas fa-calendar mr-3 text-purple-400"></i>
+                        Member since {{ user.created_at.strftime('%B %Y') }}
+                    </p>
+                    
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white/5 rounded-2xl p-4 border border-white/10">
+                            <div class="text-2xl font-bold text-white">{{ style_history|length if style_history else 0 }}</div>
+                            <div class="text-white/70 text-sm">Style History</div>
+                        </div>
+                        <div class="bg-white/5 rounded-2xl p-4 border border-white/10">
+                            <div class="text-2xl font-bold text-white">{{ recent_requests|length if recent_requests else 0 }}</div>
+                            <div class="text-white/70 text-sm">Recent Requests</div>
+                        </div>
+                        <div class="bg-white/5 rounded-2xl p-4 border border-white/10">
+                            <div class="text-2xl font-bold text-white">
+                                {% set success_count = recent_requests|selectattr('success', 'equalto', true)|list|length if recent_requests else 0 %}
+                                {{ success_count }}
+                            </div>
+                            <div class="text-white/70 text-sm">Successful</div>
+                        </div>
+                        <div class="bg-white/5 rounded-2xl p-4 border border-white/10">
+                            <div class="text-2xl font-bold text-white">
+                                {% if recent_requests and recent_requests|length > 0 %}
+                                    {{ "%.1f"|format((recent_requests|selectattr('success', 'equalto', true)|list|length / recent_requests|length) * 100) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                            <div class="text-white/70 text-sm">Success Rate</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Accessibility Controls -->
-    <div class="fixed bottom-3 sm:bottom-4 right-3 sm:right-4 space-y-2 z-50">
-        <button 
-            onclick="toggleHighContrast()" 
-            class="bg-gray-800 text-white p-2 sm:p-3 rounded-full shadow-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
-            aria-label="Toggle high contrast mode"
-            title="Toggle high contrast (Press H)"
-        >
-            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"></path>
-            </svg>
-        </button>
-    </div>
-
-    <script>
-        // High contrast toggle
-        function toggleHighContrast() {
-            const body = document.body;
-            const currentTheme = body.getAttribute('data-theme');
-            const newTheme = currentTheme === 'high-contrast' ? 'normal' : 'high-contrast';
-            body.setAttribute('data-theme', newTheme);
+        <!-- Style History Section -->
+        <div class="glass-effect rounded-3xl p-8 border border-white/10 card-hover mb-16">
+            <h3 class="text-3xl font-bold text-white mb-8 flex items-center">
+                <i class="fas fa-history text-purple-400 mr-4 text-2xl"></i>
+                Your Style History
+            </h3>
             
-            // Announce to screen readers
-            const announcement = document.createElement('div');
-            announcement.setAttribute('aria-live', 'polite');
-            announcement.setAttribute('aria-label', `High contrast mode ${newTheme === 'high-contrast' ? 'enabled' : 'disabled'}`);
-            announcement.style.position = 'absolute';
-            announcement.style.left = '-10000px';
-            document.body.appendChild(announcement);
-            setTimeout(() => document.body.removeChild(announcement), 1000);
-        }
+            {% if style_history %}
+                <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {% for entry in style_history %}
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
+                            <div class="flex justify-between items-start mb-4">
+                                <h4 class="font-bold text-white text-lg" aria-label="Aesthetic name">
+                                    {{ entry.aesthetic }}
+                                </h4>
+                                <span class="text-white/60 text-sm" aria-label="Date">
+                                    {{ entry.timestamp.split('T')[0] if entry.timestamp else 'Recent' }}
+                                </span>
+                            </div>
+                            <p class="text-white/70 text-base mb-4" aria-label="Cultural input">
+                                <strong class="text-purple-400">Input:</strong> {{ entry.input }}
+                            </p>
+                            <div class="flex items-center text-purple-400">
+                                <i class="fas fa-palette mr-2"></i>
+                                <span class="text-sm">Style Generated</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-16">
+                    <div class="w-20 h-20 bg-gradient-to-r from-gray-600 to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 animate-glow">
+                        <i class="fas fa-palette text-white text-3xl"></i>
+                    </div>
+                    <p class="text-white/70 text-xl font-semibold mb-4">No style history yet</p>
+                    <p class="text-white/50 text-lg mb-8">Start by generating your first style recommendation!</p>
+                    <a href="{{ url_for('index') }}" 
+                       class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 animate-glow inline-flex items-center">
+                        <i class="fas fa-magic mr-3"></i>
+                        Generate Your First Style
+                    </a>
+                </div>
+            {% endif %}
+        </div>
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'h' || e.key === 'H') {
-                e.preventDefault();
-                toggleHighContrast();
-            }
-        });
-    </script>
-</body>
-</html> 
+        <!-- Recent Requests Section -->
+        <div class="glass-effect rounded-3xl p-8 border border-white/10 card-hover mb-16">
+            <h3 class="text-3xl font-bold text-white mb-8 flex items-center">
+                <i class="fas fa-clock text-blue-400 mr-4 text-2xl"></i>
+                Recent Style Requests
+            </h3>
+            
+            {% if recent_requests %}
+                <div class="space-y-6">
+                    {% for request in recent_requests %}
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
+                            <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start space-y-4 lg:space-y-0">
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-white text-lg mb-2" aria-label="Cultural input">
+                                        {{ request.cultural_input }}
+                                    </h4>
+                                    {% if request.aesthetic_name %}
+                                        <p class="text-purple-400 text-base mb-3" aria-label="Generated aesthetic">
+                                            <i class="fas fa-star mr-2"></i>
+                                            <strong>Aesthetic:</strong> {{ request.aesthetic_name }}
+                                        </p>
+                                    {% endif %}
+                                    <p class="text-white/60 text-base" aria-label="Request date">
+                                        <i class="fas fa-calendar-alt mr-2"></i>
+                                        {{ request.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                    </p>
+                                </div>
+                                <div class="lg:ml-6">
+                                    {% if request.success %}
+                                        <span class="inline-flex items-center bg-green-600/20 text-green-400 px-4 py-2 rounded-full border border-green-500/30" aria-label="Success">
+                                            <i class="fas fa-check-circle mr-2"></i>
+                                            Success
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center bg-red-600/20 text-red-400 px-4 py-2 rounded-full border border-red-500/30" aria-label="Failed">
+                                            <i class="fas fa-times-circle mr-2"></i>
+                                            Failed
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-16">
+                    <div class="w-20 h-20 bg-gradient-to-r from-gray-600 to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 animate-glow">
+                        <i class="fas fa-clock text-white text-3xl"></i>
+                    </div>
+                    <p class="text-white/70 text-xl font-semibold mb-4">No recent style requests</p>
+                    <p class="text-white/50 text-lg">Start creating styles to see your request history!</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="glass-effect rounded-3xl p-8 border border-white/10 card-hover mb-16">
+            <h3 class="text-3xl font-bold text-white mb-8 flex items-center">
+                <i class="fas fa-bolt text-yellow-400 mr-4 text-2xl"></i>
+                Quick Actions
+            </h3>
+            
+            <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                <a href="{{ url_for('index') }}" 
+                   class="glass-effect rounded-2xl p-8 text-center card-hover border border-white/10 transition-all duration-300 hover:scale-105">
+                    <div class="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-glow">
+                        <i class="fas fa-magic text-white text-2xl"></i>
+                    </div>
+                    <div class="font-bold text-white text-xl mb-2">New Style</div>
+                    <div class="text-white/70 text-base">Generate recommendation</div>
+                </a>
+                
+                <a href="{{ url_for('analytics') }}" 
+                   class="glass-effect rounded-2xl p-8 text-center card-hover border border-white/10 transition-all duration-300 hover:scale-105">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-glow">
+                        <i class="fas fa-chart-line text-white text-2xl"></i>
+                    </div>
+                    <div class="font-bold text-white text-xl mb-2">Analytics</div>
+                    <div class="text-white/70 text-base">View trends & insights</div>
+                </a>
+                
+                <a href="{{ url_for('popular_inputs') }}" 
+                   class="glass-effect rounded-2xl p-8 text-center card-hover border border-white/10 transition-all duration-300 hover:scale-105">
+                    <div class="w-16 h-16 bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-glow">
+                        <i class="fas fa-fire text-white text-2xl"></i>
+                    </div>
+                    <div class="font-bold text-white text-xl mb-2">Popular</div>
+                    <div class="text-white/70 text-base">Trending inputs</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="glass-effect rounded-3xl p-12 border border-white/10 card-hover text-center">
+            <div class="w-24 h-24 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-glow">
+                <i class="fas fa-rocket text-white text-4xl"></i>
+            </div>
+            <h3 class="text-4xl font-bold text-white mb-6">Ready to create more styles?</h3>
+            <p class="text-white/70 text-xl mb-10 max-w-3xl mx-auto leading-relaxed">
+                Continue your cultural style journey and discover new aesthetic identities. 
+                Your preferences help build our community of style enthusiasts.
+            </p>
+            <a href="{{ url_for('index') }}" 
+               class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-12 py-6 rounded-2xl font-bold text-xl transition-all duration-300 hover:scale-105 animate-glow inline-flex items-center">
+                <i class="fas fa-magic mr-3"></i>
+                Create New Style
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %} 

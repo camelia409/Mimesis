@@ -3,390 +3,412 @@
 {% block title %}Your Style Identity - Mimesis{% endblock %}
 
 {% block content %}
-<!-- Accessibility Controls -->
-<div class="fixed bottom-4 right-4 space-y-2 z-50">
-    <button 
-        onclick="toggleHighContrast()" 
-        class="bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-        aria-label="Toggle high contrast mode"
-        title="Toggle high contrast (Press H)"
-    >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"></path>
-        </svg>
-    </button>
-</div>
+<!-- Hero Section -->
+<section class="relative py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Back Navigation -->
+        <div class="mb-8">
+            <a href="{{ url_for('index') }}" class="inline-flex items-center text-white/60 hover:text-white transition-all duration-300 hover:scale-105">
+                <i class="fas fa-arrow-left mr-3 text-lg"></i>
+                <span class="text-lg font-medium">Try Another Style</span>
+            </a>
+        </div>
 
-<!-- High Contrast Styles -->
-<style>
-    [data-theme="high-contrast"] {
-        filter: invert(90%) hue-rotate(180deg);
-    }
-    [data-theme="high-contrast"] .bg-gradient-to-r {
-        filter: invert(90%) hue-rotate(180deg);
-    }
-</style>
-<!-- Back button -->
-<div class="mb-3 sm:mb-4 md:mb-6">
-    <a href="{{ url_for('index') }}" class="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium transition duration-200 text-sm sm:text-base">
-        <i class="fas fa-arrow-left mr-2"></i>
-        Try Another Vibe
-    </a>
-</div>
-
-<!-- User input reminder -->
-<div class="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 md:mb-8">
-    <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">
-        <i class="fas fa-quote-left text-purple-600 mr-2"></i>
-        Your Cultural Input
-    </h2>
-    <p class="text-gray-700 italic text-sm sm:text-base break-words">"{{ user_input }}"</p>
-</div>
-
-{% if recommendations.success %}
-<!-- Main aesthetic identity -->
-<div class="bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-xl p-6 sm:p-8 mb-6 sm:mb-8">
-    <div class="text-center">
-        <i class="fas fa-crown text-2xl sm:text-3xl mb-3 sm:mb-4"></i>
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">{{ recommendations.aesthetic_name }}</h1>
-        <p class="text-purple-100 text-sm sm:text-base">Your unique cultural style identity</p>
-    </div>
-</div>
-
-<!-- Recommendations grid -->
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
-    <!-- Brand Suggestions -->
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
-        <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-            <i class="fas fa-tags text-purple-600 mr-2"></i>
-            Curated Brands for Your Style
-        </h3>
-        {% if recommendations.brands %}
-            <div class="space-y-3">
-                {% for brand in recommendations.brands %}
-                    <div class="flex items-center bg-gradient-to-r from-gray-50 to-purple-50 rounded-lg p-3 sm:p-4 border border-purple-100 hover:border-purple-200 transition-colors duration-200">
-                        <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3 sm:mr-4">
-                            {% if brand.startswith('@') %}
-                                <i class="fab fa-instagram text-purple-600 text-sm sm:text-base"></i>
-                            {% elif 'thrift' in brand.lower() or 'vintage' in brand.lower() %}
-                                <i class="fas fa-recycle text-green-600 text-sm sm:text-base"></i>
-                            {% elif 'diy' in brand.lower() or 'upcycle' in brand.lower() %}
-                                <i class="fas fa-paint-brush text-orange-600 text-sm sm:text-base"></i>
-                            {% else %}
-                                <i class="fas fa-store text-purple-600 text-sm sm:text-base"></i>
-                            {% endif %}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <span class="text-gray-800 font-medium text-sm sm:text-lg break-words">{{ brand }}</span>
-                            {% if brand.startswith('@') %}
-                                <p class="text-xs sm:text-sm text-purple-600 mt-1">
-                                    <i class="fab fa-instagram mr-1"></i>Instagram Boutique
-                                </p>
-                            {% elif 'thrift' in brand.lower() or 'vintage' in brand.lower() %}
-                                <p class="text-xs sm:text-sm text-green-600 mt-1">
-                                    <i class="fas fa-leaf mr-1"></i>Sustainable & Eco-Friendly
-                                </p>
-                            {% elif 'diy' in brand.lower() or 'upcycle' in brand.lower() %}
-                                <p class="text-xs sm:text-sm text-orange-600 mt-1">
-                                    <i class="fas fa-magic mr-1"></i>Creative DIY Project
-                                </p>
-                            {% else %}
-                                <p class="text-xs sm:text-sm text-gray-500 mt-1">
-                                    <i class="fas fa-globe mr-1"></i>Global Fashion Brand
-                                </p>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="text-gray-600 italic text-sm sm:text-base">No brand suggestions available</p>
-        {% endif %}
-        <div class="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
-            <h4 class="text-xs sm:text-sm font-semibold text-purple-800 mb-2">
-                <i class="fas fa-lightbulb text-purple-600 mr-2"></i>
-                Personalized Brand Strategy
-            </h4>
-            <p class="text-xs sm:text-sm text-purple-700">
-                These brands are carefully selected to match your unique aesthetic identity. 
-                We include diverse options from luxury to thrift, ensuring you can express your style at any budget while supporting sustainable and inclusive fashion.
-            </p>
-        </div>
-    </div>
-
-    <!-- Outfit Ideas -->
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
-        <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-            <i class="fas fa-tshirt text-purple-600 mr-2"></i>
-            Signature Outfit
-        </h3>
-        <div class="bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg p-4 sm:p-6">
-            <div class="prose prose-sm sm:prose-lg max-w-none">
-                <p class="text-gray-700 leading-relaxed text-sm sm:text-lg">{{ recommendations.outfit }}</p>
-            </div>
-        </div>
-        <div class="mt-3 sm:mt-4 flex items-center text-xs sm:text-sm text-gray-600">
-            <i class="fas fa-info-circle mr-2 text-purple-500 flex-shrink-0"></i>
-            <span>This outfit captures the essence of your cultural influences through carefully selected pieces and styling.</span>
-        </div>
-    </div>
-</div>
-
-<!-- Moodboard -->
-<div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
-    <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-        <i class="fas fa-palette text-purple-600 mr-2"></i>
-        Aesthetic Moodboard
-    </h3>
-    <div class="bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg p-4 sm:p-6">
-        <div class="prose prose-sm sm:prose-lg max-w-none">
-            <p class="text-gray-700 leading-relaxed text-sm sm:text-lg mb-3 sm:mb-4">{{ recommendations.moodboard }}</p>
-        </div>
-        <div class="mt-3 sm:mt-4 p-3 sm:p-4 bg-white rounded-lg border border-purple-200">
-            <h4 class="text-xs sm:text-sm font-semibold text-purple-700 mb-2">
-                <i class="fas fa-lightbulb text-purple-500 mr-2"></i>
-                Visual Inspiration Guide
-            </h4>
-            <p class="text-xs sm:text-sm text-gray-600">
-                Use this description to create your own moodboard, find inspiration on Pinterest, or guide your shopping decisions. 
-                The aesthetic captures the essence of your cultural influences through colors, textures, and themes.
-            </p>
-        </div>
-    </div>
-</div>
-
-<!-- Style Inspiration & Tips -->
-<div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
-    <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-        <i class="fas fa-magic text-purple-600 mr-2"></i>
-        Style Inspiration & Tips
-    </h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-        <!-- Cultural Context -->
-        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 sm:p-4">
-            <h4 class="text-base sm:text-lg font-semibold text-blue-800 mb-2 sm:mb-3">
-                <i class="fas fa-globe text-blue-600 mr-2"></i>
-                Cultural Context
-            </h4>
-            <p class="text-blue-700 text-xs sm:text-sm leading-relaxed">
-                Your style identity draws from diverse cultural influences, creating a unique fusion that celebrates global aesthetics. 
-                This approach honors the rich traditions and contemporary expressions that shape your personal style journey.
-            </p>
-        </div>
-        
-        <!-- Sustainability Focus -->
-        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 sm:p-4">
-            <h4 class="text-base sm:text-lg font-semibold text-green-800 mb-2 sm:mb-3">
-                <i class="fas fa-leaf text-green-600 mr-2"></i>
-                Sustainable Style
-            </h4>
-            <p class="text-green-700 text-xs sm:text-sm leading-relaxed">
-                Embrace thrift shopping, vintage finds, and DIY projects to build your aesthetic sustainably. 
-                Mix high-end pieces with affordable alternatives to create a unique, eco-conscious wardrobe.
-            </p>
-        </div>
-        
-        <!-- Personal Expression -->
-        <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 sm:p-4">
-            <h4 class="text-base sm:text-lg font-semibold text-purple-800 mb-2 sm:mb-3">
-                <i class="fas fa-heart text-purple-600 mr-2"></i>
-                Personal Expression
-            </h4>
-            <p class="text-purple-700 text-xs sm:text-sm leading-relaxed">
-                Your style is a reflection of your cultural journey and personal story. 
-                Don't be afraid to experiment, mix different elements, and make the aesthetic truly your own.
-            </p>
-        </div>
-        
-        <!-- Shopping Strategy -->
-        <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-3 sm:p-4">
-            <h4 class="text-base sm:text-lg font-semibold text-orange-800 mb-2 sm:mb-3">
-                <i class="fas fa-shopping-bag text-orange-600 mr-2"></i>
-                Shopping Strategy
-            </h4>
-            <p class="text-orange-700 text-xs sm:text-sm leading-relaxed">
-                Start with key pieces that embody your aesthetic, then build around them. 
-                Look for items that can be styled multiple ways and invest in quality over quantity.
-            </p>
-        </div>
-    </div>
-</div>
-
-<!-- User Feedback Section -->
-<div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
-    <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-        <i class="fas fa-star text-purple-600 mr-2"></i>
-        Rate Your Style Identity
-    </h3>
-    <form id="feedback-form" class="space-y-3 sm:space-y-4">
-        <input type="hidden" id="request-id" value="{{ request_id }}">
-        
-        <!-- Star Rating -->
-        <div>
-            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">How do you like your style recommendations?</label>
-            <div class="flex space-x-1" id="star-rating">
-                <button type="button" class="star-btn text-xl sm:text-2xl text-gray-300 hover:text-yellow-500 transition duration-200" data-rating="1">
-                    <i class="fas fa-star"></i>
-                </button>
-                <button type="button" class="star-btn text-xl sm:text-2xl text-gray-300 hover:text-yellow-500 transition duration-200" data-rating="2">
-                    <i class="fas fa-star"></i>
-                </button>
-                <button type="button" class="star-btn text-xl sm:text-2xl text-gray-300 hover:text-yellow-500 transition duration-200" data-rating="3">
-                    <i class="fas fa-star"></i>
-                </button>
-                <button type="button" class="star-btn text-xl sm:text-2xl text-gray-300 hover:text-yellow-500 transition duration-200" data-rating="4">
-                    <i class="fas fa-star"></i>
-                </button>
-                <button type="button" class="star-btn text-xl sm:text-2xl text-gray-300 hover:text-yellow-500 transition duration-200" data-rating="5">
-                    <i class="fas fa-star"></i>
-                </button>
-            </div>
-            <input type="hidden" id="rating-value" name="rating" value="">
-        </div>
-        
-        <!-- Optional Comment -->
-        <div>
-            <label for="feedback-text" class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                Any thoughts to share? (Optional)
-            </label>
-            <textarea 
-                id="feedback-text" 
-                name="feedback" 
-                rows="3" 
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
-                placeholder="Tell us what you loved or how we could improve..."
-            ></textarea>
-        </div>
-        
-        <button 
-            type="submit" 
-            id="feedback-submit"
-            class="bg-purple-600 hover:bg-purple-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition duration-200 disabled:opacity-50 text-sm sm:text-base"
-            disabled
-        >
-            <i class="fas fa-heart mr-2"></i>
-            Submit Feedback
-        </button>
-    </form>
-    
-    <div id="feedback-response" class="mt-3 sm:mt-4 hidden">
-        <div class="bg-green-50 border-l-4 border-green-500 p-3 sm:p-4 rounded-r-lg">
-            <p class="text-green-700 font-medium text-sm sm:text-base">
-                <i class="fas fa-check-circle mr-2"></i>
-                Thank you for your feedback!
-            </p>
-        </div>
-    </div>
-</div>
-
-<!-- Enhanced AI Stylist Chat -->
-<div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
-    <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-        <i class="fas fa-comments text-purple-600 mr-2"></i>
-        Ask Your AI Stylist
-    </h3>
-    <p class="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">Have questions about your style? Want suggestions for specific occasions? Chat with your AI stylist!</p>
-    
-    <div class="space-y-3 sm:space-y-4">
-        <!-- Chat Input -->
-        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-            <input 
-                type="text" 
-                id="chat-input" 
-                placeholder="E.g., 'What shoes would work with this?' or 'Berlin rave outfit ideas?'"
-                class="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
-                onkeypress="if(event.key==='Enter') sendChat('{{ request_id }}')"
-            >
-            <button 
-                onclick="sendChat('{{ request_id }}')" 
-                class="bg-purple-600 hover:bg-purple-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition duration-200 text-sm sm:text-base"
-            >
-                <i class="fas fa-paper-plane mr-2"></i>
-                Send
-            </button>
-        </div>
-        
-        <!-- Chat Output -->
-        <div id="chat-output" class="hidden">
-            <div class="bg-purple-50 border-l-4 border-purple-500 p-3 sm:p-4 rounded-r-lg">
-                <div class="flex items-start space-x-3">
-                    <i class="fas fa-robot text-purple-600 text-base sm:text-lg mt-1 flex-shrink-0"></i>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-medium text-purple-800 mb-1 text-sm sm:text-base">Your AI Stylist</p>
-                        <p id="chat-response" class="text-purple-700 text-sm sm:text-base"></p>
-                    </div>
+        <!-- User Input Display -->
+        <div class="glass-effect rounded-3xl p-8 border border-white/10 mb-12 card-hover">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-white mb-6">
+                    <i class="fas fa-quote-left text-purple-400 mr-3"></i>
+                    Your Cultural Input
+                </h2>
+                <div class="bg-white/5 rounded-2xl p-6 border border-white/10">
+                    <p class="text-white/90 text-xl italic break-words">"{{ user_input }}"</p>
                 </div>
             </div>
         </div>
-        
-        <!-- Welcome Message -->
-        <div id="chat-welcome" class="bg-blue-50 border-l-4 border-blue-500 p-3 sm:p-4 rounded-r-lg mb-3 sm:mb-4">
-            <div class="flex items-start space-x-3">
-                <i class="fas fa-robot text-blue-600 text-lg mt-1"></i>
+
+        {% if recommendations.success %}
+        <!-- Main Aesthetic Identity -->
+        <div class="text-center mb-16">
+            <div class="glass-effect rounded-3xl p-12 border border-white/10 card-hover">
+                <div class="w-24 h-24 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-glow">
+                    <i class="fas fa-crown text-white text-4xl"></i>
+                </div>
+                <h1 class="text-5xl font-black text-gradient font-space mb-6">{{ recommendations.aesthetic_name }}</h1>
+                <p class="text-white/70 text-xl">Your unique cultural style identity</p>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+            <!-- Brand Suggestions -->
+            <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
+                <h3 class="text-3xl font-bold text-white mb-8">
+                    <i class="fas fa-tags text-purple-400 mr-3"></i>
+                    Curated Brands
+                </h3>
+                {% if recommendations.brands %}
+                    <div class="space-y-6">
+                        {% for brand in recommendations.brands %}
+                            <div class="bg-white/5 rounded-2xl p-6 border border-white/10 hover:border-purple-500/30 transition-all duration-300 hover:scale-105">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mr-4">
+                                        {% if brand.startswith('@') %}
+                                            <i class="fab fa-instagram text-white text-xl"></i>
+                                        {% elif 'thrift' in brand.lower() or 'vintage' in brand.lower() %}
+                                            <i class="fas fa-recycle text-white text-xl"></i>
+                                        {% elif 'diy' in brand.lower() or 'upcycle' in brand.lower() %}
+                                            <i class="fas fa-paint-brush text-white text-xl"></i>
+                                        {% else %}
+                                            <i class="fas fa-store text-white text-xl"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="text-white font-semibold text-lg">{{ brand }}</span>
+                                        {% if brand.startswith('@') %}
+                                            <p class="text-purple-400 text-sm mt-1">
+                                                <i class="fab fa-instagram mr-1"></i>Instagram Boutique
+                                            </p>
+                                        {% elif 'thrift' in brand.lower() or 'vintage' in brand.lower() %}
+                                            <p class="text-green-400 text-sm mt-1">
+                                                <i class="fas fa-leaf mr-1"></i>Sustainable & Eco-Friendly
+                                            </p>
+                                        {% elif 'diy' in brand.lower() or 'upcycle' in brand.lower() %}
+                                            <p class="text-orange-400 text-sm mt-1">
+                                                <i class="fas fa-magic mr-1"></i>Creative DIY Project
+                                            </p>
+                                        {% else %}
+                                            <p class="text-white/60 text-sm mt-1">
+                                                <i class="fas fa-globe mr-1"></i>Global Fashion Brand
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-white/60 italic text-lg">No brand suggestions available</p>
+                {% endif %}
+                
+                <div class="mt-8 p-6 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl border border-purple-500/30">
+                    <h4 class="text-lg font-semibold text-white mb-3">
+                        <i class="fas fa-lightbulb text-purple-400 mr-2"></i>
+                        Personalized Brand Strategy
+                    </h4>
+                    <p class="text-white/80 text-base leading-relaxed">
+                        These brands are carefully selected to match your unique aesthetic identity. 
+                        We include diverse options from luxury to thrift, ensuring you can express your style at any budget while supporting sustainable and inclusive fashion.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Signature Outfit -->
+            <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
+                <h3 class="text-3xl font-bold text-white mb-8">
+                    <i class="fas fa-tshirt text-purple-400 mr-3"></i>
+                    Signature Outfit
+                </h3>
+                <div class="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-2xl p-8 border border-purple-500/30">
+                    <p class="text-white/90 text-lg leading-relaxed">{{ recommendations.outfit }}</p>
+                </div>
+                <div class="mt-6 flex items-center text-white/60">
+                    <i class="fas fa-info-circle mr-3 text-purple-400 flex-shrink-0"></i>
+                    <span class="text-base">This outfit captures the essence of your cultural influences through carefully selected pieces and styling.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Moodboard Section -->
+        <div class="glass-effect rounded-3xl p-10 border border-white/10 mb-16 card-hover">
+            <h3 class="text-3xl font-bold text-white mb-8">
+                <i class="fas fa-palette text-purple-400 mr-3"></i>
+                Aesthetic Moodboard
+            </h3>
+            <div class="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-2xl p-8 border border-purple-500/30">
+                <p class="text-white/90 text-lg leading-relaxed mb-6">{{ recommendations.moodboard }}</p>
+                <div class="p-6 bg-white/5 rounded-2xl border border-white/10">
+                    <h4 class="text-lg font-semibold text-white mb-3">
+                        <i class="fas fa-lightbulb text-purple-400 mr-2"></i>
+                        Visual Inspiration Guide
+                    </h4>
+                    <p class="text-white/70 text-base leading-relaxed">
+                        Use this description to create your own moodboard, find inspiration on Pinterest, or guide your shopping decisions. 
+                        The aesthetic captures the essence of your cultural influences through colors, textures, and themes.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Style Inspiration Grid -->
+        <div class="glass-effect rounded-3xl p-10 border border-white/10 mb-16 card-hover">
+            <h3 class="text-3xl font-bold text-white mb-8">
+                <i class="fas fa-magic text-purple-400 mr-3"></i>
+                Style Inspiration & Tips
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Cultural Context -->
+                <div class="bg-gradient-to-br from-blue-600/20 to-indigo-600/20 rounded-2xl p-6 border border-blue-500/30">
+                    <h4 class="text-xl font-semibold text-white mb-4">
+                        <i class="fas fa-globe text-blue-400 mr-2"></i>
+                        Cultural Context
+                    </h4>
+                    <p class="text-white/80 text-base leading-relaxed">
+                        Your style identity draws from diverse cultural influences, creating a unique fusion that celebrates global aesthetics. 
+                        This approach honors the rich traditions and contemporary expressions that shape your personal style journey.
+                    </p>
+                </div>
+                
+                <!-- Sustainability Focus -->
+                <div class="bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-2xl p-6 border border-green-500/30">
+                    <h4 class="text-xl font-semibold text-white mb-4">
+                        <i class="fas fa-leaf text-green-400 mr-2"></i>
+                        Sustainable Style
+                    </h4>
+                    <p class="text-white/80 text-base leading-relaxed">
+                        Embrace thrift shopping, vintage finds, and DIY projects to build your aesthetic sustainably. 
+                        Mix high-end pieces with affordable alternatives to create a unique, eco-conscious wardrobe.
+                    </p>
+                </div>
+                
+                <!-- Personal Expression -->
+                <div class="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-2xl p-6 border border-purple-500/30">
+                    <h4 class="text-xl font-semibold text-white mb-4">
+                        <i class="fas fa-heart text-purple-400 mr-2"></i>
+                        Personal Expression
+                    </h4>
+                    <p class="text-white/80 text-base leading-relaxed">
+                        Your style is a reflection of your cultural journey and personal story. 
+                        Don't be afraid to experiment, mix different elements, and make the aesthetic truly your own.
+                    </p>
+                </div>
+                
+                <!-- Shopping Strategy -->
+                <div class="bg-gradient-to-br from-orange-600/20 to-amber-600/20 rounded-2xl p-6 border border-orange-500/30">
+                    <h4 class="text-xl font-semibold text-white mb-4">
+                        <i class="fas fa-shopping-bag text-orange-400 mr-2"></i>
+                        Shopping Strategy
+                    </h4>
+                    <p class="text-white/80 text-base leading-relaxed">
+                        Start with key pieces that embody your aesthetic, then build around them. 
+                        Look for items that can be styled multiple ways and invest in quality over quantity.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Stylist Chat -->
+        <div class="glass-effect rounded-3xl p-10 border border-white/10 mb-16 card-hover">
+            <h3 class="text-3xl font-bold text-white mb-8">
+                <i class="fas fa-comments text-purple-400 mr-3"></i>
+                Ask Your AI Stylist
+            </h3>
+            <p class="text-white/70 text-lg mb-8">Have questions about your style? Want suggestions for specific occasions? Chat with your AI stylist!</p>
+            
+            <div class="space-y-6">
+                <!-- Chat Input -->
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <input 
+                        type="text" 
+                        id="chat-input" 
+                        placeholder="E.g., 'What shoes would work with this?' or 'Berlin rave outfit ideas?'"
+                        class="flex-1 px-6 py-4 bg-white/5 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm text-lg"
+                        onkeypress="if(event.key==='Enter') sendChat('{{ request_id }}')"
+                    >
+                    <button 
+                        onclick="sendChat('{{ request_id }}')" 
+                        class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105 animate-glow text-lg"
+                    >
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Send
+                    </button>
+                </div>
+                
+                <!-- Chat Output -->
+                <div id="chat-output" class="hidden">
+                    <div class="bg-purple-600/20 border-l-4 border-purple-500 p-6 rounded-2xl">
+                        <div class="flex items-start space-x-4">
+                            <i class="fas fa-robot text-purple-400 text-2xl mt-1 flex-shrink-0"></i>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-semibold text-white mb-2 text-lg">Your AI Stylist</p>
+                                <p id="chat-response" class="text-white/90 text-lg"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Welcome Message -->
+                <div id="chat-welcome" class="bg-blue-600/20 border-l-4 border-blue-500 p-6 rounded-2xl">
+                    <div class="flex items-start space-x-4">
+                        <i class="fas fa-robot text-blue-400 text-2xl mt-1"></i>
+                        <div>
+                            <p class="font-semibold text-white mb-2 text-lg">Your AI Stylist</p>
+                            <p class="text-white/90 text-lg">Hi! I'm here to help you explore your unique style identity. Ask me about accessories, makeup, sustainable options, or any fashion questions you have!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="chat-loading" class="hidden">
+                    <div class="bg-white/5 border border-white/20 p-6 rounded-2xl">
+                        <div class="flex items-center space-x-4">
+                            <div class="animate-spin rounded-full h-6 w-6 border-2 border-purple-600 border-t-transparent"></div>
+                            <p class="text-white/70 text-lg">Your stylist is thinking...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Questions -->
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="quickChat('What accessories would complete this look?', '{{ request_id }}')" 
+                            class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 text-base">
+                        Accessories?
+                    </button>
+                    <button onclick="quickChat('What makeup would match this aesthetic?', '{{ request_id }}')" 
+                            class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 text-base">
+                        Makeup ideas?
+                    </button>
+                    <button onclick="quickChat('How can I make this more sustainable?', '{{ request_id }}')" 
+                            class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 text-base">
+                        Sustainable options?
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Social Media Integration -->
+        <div class="glass-effect rounded-3xl p-10 border border-white/10 mb-16 card-hover">
+            <h3 class="text-3xl font-bold text-white mb-8">
+                <i class="fas fa-share-alt text-purple-400 mr-3"></i>
+                Share Your Vibe
+            </h3>
+            <p class="text-white/70 text-lg mb-8">Show off your unique aesthetic identity with your friends!</p>
+            
+            <div class="flex flex-col sm:flex-row gap-6">
+                <button onclick="shareToInstagram('{{ recommendations.aesthetic_name }}')" 
+                        class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 animate-glow flex items-center justify-center text-lg">
+                    <i class="fab fa-instagram mr-3 text-2xl"></i>
+                    Share on Instagram
+                </button>
+                <button onclick="copyStyleURL()" 
+                        class="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center text-lg">
+                    <i class="fas fa-link mr-3"></i>
+                    Copy Link
+                </button>
+            </div>
+            
+            <!-- Share preview -->
+            <div id="share-preview" class="mt-6 hidden">
+                <div class="bg-white/5 border border-white/20 p-6 rounded-2xl">
+                    <p class="text-white/60 text-base mb-3">Share text preview:</p>
+                    <p id="share-text" class="text-white font-medium text-lg break-words"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Feedback Section -->
+        <div class="glass-effect rounded-3xl p-10 border border-white/10 mb-16 card-hover">
+            <h3 class="text-3xl font-bold text-white mb-8">
+                <i class="fas fa-star text-purple-400 mr-3"></i>
+                Rate Your Style Identity
+            </h3>
+            <form id="feedback-form" class="space-y-6">
+                <input type="hidden" id="request-id" value="{{ request_id }}">
+                
+                <!-- Star Rating -->
                 <div>
-                    <p class="font-medium text-blue-800 mb-1">Your AI Stylist</p>
-                    <p class="text-blue-700">Hi! I'm here to help you explore your unique style identity. Ask me about accessories, makeup, sustainable options, or any fashion questions you have!</p>
+                    <label class="block text-lg font-medium text-white mb-4">How do you like your style recommendations?</label>
+                    <div class="flex space-x-2" id="star-rating">
+                        <button type="button" class="star-btn text-3xl text-white/30 hover:text-yellow-400 transition-all duration-300 hover:scale-110" data-rating="1">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        <button type="button" class="star-btn text-3xl text-white/30 hover:text-yellow-400 transition-all duration-300 hover:scale-110" data-rating="2">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        <button type="button" class="star-btn text-3xl text-white/30 hover:text-yellow-400 transition-all duration-300 hover:scale-110" data-rating="3">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        <button type="button" class="star-btn text-3xl text-white/30 hover:text-yellow-400 transition-all duration-300 hover:scale-110" data-rating="4">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        <button type="button" class="star-btn text-3xl text-white/30 hover:text-yellow-400 transition-all duration-300 hover:scale-110" data-rating="5">
+                            <i class="fas fa-star"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="rating-value" name="rating" value="">
+                </div>
+                
+                <!-- Optional Comment -->
+                <div>
+                    <label for="feedback-text" class="block text-lg font-medium text-white mb-4">
+                        Any thoughts to share? (Optional)
+                    </label>
+                    <textarea 
+                        id="feedback-text" 
+                        name="feedback" 
+                        rows="4" 
+                        class="w-full px-6 py-4 bg-white/5 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm text-lg"
+                        placeholder="Tell us what you loved or how we could improve..."
+                    ></textarea>
+                </div>
+                
+                <button 
+                    type="submit" 
+                    id="feedback-submit"
+                    class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 animate-glow disabled:opacity-50 text-lg"
+                    disabled
+                >
+                    <i class="fas fa-heart mr-3"></i>
+                    Submit Feedback
+                </button>
+            </form>
+            
+            <div id="feedback-response" class="mt-6 hidden">
+                <div class="bg-green-600/20 border-l-4 border-green-500 p-6 rounded-2xl">
+                    <p class="text-white font-semibold text-lg">
+                        <i class="fas fa-check-circle mr-3"></i>
+                        Thank you for your feedback!
+                    </p>
                 </div>
             </div>
         </div>
-        
-        <!-- Loading State -->
-        <div id="chat-loading" class="hidden">
-            <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                <div class="flex items-center space-x-3">
-                    <div class="animate-spin rounded-full h-5 w-5 border-2 border-purple-600 border-t-transparent"></div>
-                    <p class="text-gray-600">Your stylist is thinking...</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Quick Questions -->
-        <div class="flex flex-wrap gap-2">
-            <button onclick="quickChat('What accessories would complete this look?', '{{ request_id }}')" 
-                    class="text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded-full transition duration-200">
-                Accessories?
-            </button>
-            <button onclick="quickChat('What makeup would match this aesthetic?', '{{ request_id }}')" 
-                    class="text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded-full transition duration-200">
-                Makeup ideas?
-            </button>
-            <button onclick="quickChat('How can I make this more sustainable?', '{{ request_id }}')" 
-                    class="text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded-full transition duration-200">
-                Sustainable options?
-            </button>
-        </div>
-    </div>
-</div>
 
-<!-- Social Media Integration -->
-<div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
-    <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-        <i class="fas fa-share-alt text-purple-600 mr-2"></i>
-        Share Your Vibe
-    </h3>
-    <p class="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">Show off your unique aesthetic identity with your friends!</p>
-    
-    <div class="flex flex-col sm:flex-row gap-3">
-        <button onclick="shareToInstagram('{{ recommendations.aesthetic_name }}')" 
-                class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 sm:px-6 py-3 rounded-lg font-medium transition duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm sm:text-base">
-            <i class="fab fa-instagram mr-2 text-lg sm:text-xl"></i>
-            Share on Instagram
-        </button>
-        <button onclick="copyStyleURL()" 
-                class="bg-gray-600 hover:bg-gray-700 text-white px-4 sm:px-6 py-3 rounded-lg font-medium transition duration-200 flex items-center justify-center shadow-lg hover:shadow-xl text-sm sm:text-base">
-            <i class="fas fa-link mr-2"></i>
-            Copy Link
-        </button>
-    </div>
-    
-    <!-- Share preview -->
-    <div id="share-preview" class="mt-3 sm:mt-4 hidden">
-        <div class="bg-gray-50 border border-gray-200 p-3 sm:p-4 rounded-lg">
-            <p class="text-xs sm:text-sm text-gray-600 mb-2">Share text preview:</p>
-            <p id="share-text" class="text-gray-800 font-medium text-sm sm:text-base break-words"></p>
+        {% else %}
+        <!-- Error state -->
+        <div class="glass-effect rounded-3xl p-12 border border-red-500/30 text-center">
+            <div class="w-24 h-24 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center mx-auto mb-8 animate-glow">
+                <i class="fas fa-exclamation-triangle text-white text-4xl"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-white mb-6">Unable to Generate Recommendations</h2>
+            <p class="text-white/70 text-xl mb-8">{{ recommendations.error or "An unexpected error occurred while processing your cultural preferences." }}</p>
+            <a href="{{ url_for('index') }}" class="bg-gradient-to-r from-red-600 to-red-800 text-white px-8 py-4 rounded-2xl font-semibold hover:from-red-700 hover:to-red-900 transition-all duration-300 hover:scale-105 animate-glow text-lg">
+                <i class="fas fa-redo mr-3"></i>
+                Try Again
+            </a>
         </div>
+        {% endif %}
+
+        <!-- Debug information (only shown in development) -->
+        {% if config.DEBUG %}
+        <div class="mt-16 glass-effect rounded-3xl p-8 border border-white/10">
+            <h4 class="font-semibold text-white mb-4 text-lg">Debug Information</h4>
+            <details class="text-base">
+                <summary class="cursor-pointer text-white/70 hover:text-white">View API Responses</summary>
+                <div class="mt-4 space-y-4">
+                    <div>
+                        <strong class="text-white">Qloo Data:</strong>
+                        <pre class="bg-white/5 p-4 rounded-2xl text-sm overflow-auto max-h-60 text-white/80">{{ qloo_data | tojson(indent=2) }}</pre>
+                    </div>
+                    <div>
+                        <strong class="text-white">Gemini Recommendations:</strong>
+                        <pre class="bg-white/5 p-4 rounded-2xl text-sm overflow-auto max-h-60 text-white/80">{{ recommendations | tojson(indent=2) }}</pre>
+                    </div>
+                </div>
+            </details>
+        </div>
+        {% endif %}
     </div>
-</div>
+</section>
 
 <!-- JavaScript Functions -->
 <script>
@@ -404,11 +426,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update visual state
             stars.forEach((s, i) => {
                 if (i < rating) {
-                    s.classList.remove('text-gray-300');
-                    s.classList.add('text-yellow-500');
+                    s.classList.remove('text-white/30');
+                    s.classList.add('text-yellow-400');
                 } else {
-                    s.classList.remove('text-yellow-500');
-                    s.classList.add('text-gray-300');
+                    s.classList.remove('text-yellow-400');
+                    s.classList.add('text-white/30');
                 }
             });
             
@@ -561,31 +583,6 @@ function copyStyleURL() {
     });
 }
 
-// Accessibility Functions
-function toggleHighContrast() {
-    const body = document.body;
-    const currentTheme = body.getAttribute('data-theme');
-    const newTheme = currentTheme === 'high-contrast' ? 'normal' : 'high-contrast';
-    body.setAttribute('data-theme', newTheme);
-    
-    // Announce to screen readers
-    const announcement = document.createElement('div');
-    announcement.setAttribute('aria-live', 'polite');
-    announcement.setAttribute('aria-label', `High contrast mode ${newTheme === 'high-contrast' ? 'enabled' : 'disabled'}`);
-    announcement.style.position = 'absolute';
-    announcement.style.left = '-10000px';
-    document.body.appendChild(announcement);
-    setTimeout(() => document.body.removeChild(announcement), 1000);
-}
-
-// Keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'h' || e.key === 'H') {
-        e.preventDefault();
-        toggleHighContrast();
-    }
-});
-
 // Focus management for accessibility
 document.addEventListener('DOMContentLoaded', () => {
     // Announce the aesthetic name to screen readers
@@ -596,37 +593,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
-
-{% else %}
-<!-- Error state -->
-<div class="bg-red-50 border border-red-200 rounded-xl p-4 sm:p-6 text-center">
-    <i class="fas fa-exclamation-triangle text-red-500 text-2xl sm:text-3xl mb-3 sm:mb-4"></i>
-    <h2 class="text-lg sm:text-xl font-bold text-red-800 mb-2">Unable to Generate Recommendations</h2>
-    <p class="text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">{{ recommendations.error or "An unexpected error occurred while processing your cultural preferences." }}</p>
-    <a href="{{ url_for('index') }}" class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition duration-200 text-sm sm:text-base">
-        <i class="fas fa-redo mr-2"></i>
-        Try Again
-    </a>
-</div>
-{% endif %}
-
-<!-- Debug information (only shown in development) -->
-{% if config.DEBUG %}
-<div class="mt-6 sm:mt-8 bg-gray-100 rounded-xl p-3 sm:p-4">
-    <h4 class="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Debug Information</h4>
-    <details class="text-xs sm:text-sm">
-        <summary class="cursor-pointer text-gray-700 hover:text-gray-900">View API Responses</summary>
-        <div class="mt-2 space-y-2">
-            <div>
-                <strong>Qloo Data:</strong>
-                <pre class="bg-white p-2 rounded text-xs overflow-auto max-h-40 sm:max-h-60">{{ qloo_data | tojson(indent=2) }}</pre>
-            </div>
-            <div>
-                <strong>Gemini Recommendations:</strong>
-                <pre class="bg-white p-2 rounded text-xs overflow-auto max-h-40 sm:max-h-60">{{ recommendations | tojson(indent=2) }}</pre>
-            </div>
-        </div>
-    </details>
-</div>
-{% endif %}
 {% endblock %}

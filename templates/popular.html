@@ -1,149 +1,313 @@
 {% extends "base.html" %}
 
-{% block title %}Popular Cultural Combinations - Mimesis{% endblock %}
+{% block title %}Trending Cultural Combinations - Mimesis{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-    <!-- Header -->
-    <div class="text-center">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            <i class="fas fa-fire text-orange-500 mr-3"></i>
-            Popular Cultural Combinations
-        </h1>
-        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-            Discover what cultural combinations other users love. Get inspired by trending aesthetic inputs.
-        </p>
-    </div>
+<!-- Hero Section -->
+<section class="relative py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-16">
+            <div class="w-24 h-24 bg-gradient-to-r from-orange-600 to-red-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-glow">
+                <i class="fas fa-fire text-white text-4xl"></i>
+            </div>
+            <h1 class="text-5xl font-black text-gradient font-space mb-8">Trending Cultural Combinations</h1>
+            <p class="text-2xl text-white/70 max-w-4xl mx-auto leading-relaxed">
+                Discover what cultural combinations other users love. Get inspired by trending aesthetic inputs and find your unique style identity.
+            </p>
+        </div>
 
-    <!-- Back to main -->
-    <div class="mb-6">
-        <a href="{{ url_for('index') }}" class="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium transition duration-200">
-            <i class="fas fa-arrow-left mr-2"></i>
-            Create Your Own Style
-        </a>
-    </div>
+        <!-- Back Navigation -->
+        <div class="mb-12">
+            <a href="{{ url_for('index') }}" class="inline-flex items-center text-white/60 hover:text-white transition-all duration-300 hover:scale-105">
+                <i class="fas fa-arrow-left mr-3 text-lg"></i>
+                <span class="text-lg font-medium">Create Your Own Style</span>
+            </a>
+        </div>
 
-    {% if popular_inputs %}
-    <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {% for input in popular_inputs %}
-        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition duration-200 cursor-pointer transform hover:scale-105 popular-card" 
-             data-cultural-input="{{ input.cultural_input|e }}">
-            
-            <!-- Request count badge -->
-            <div class="flex justify-between items-start mb-4">
-                <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
-                    <i class="fas fa-users mr-1"></i>
-                    {{ input.request_count }} {% if input.request_count == 1 %}user{% else %}users{% endif %}
-                </span>
-                {% if input.avg_rating %}
-                <div class="flex items-center text-yellow-500">
-                    <i class="fas fa-star mr-1"></i>
-                    <span class="text-sm font-medium text-gray-700">{{ "%.1f"|format(input.avg_rating) }}</span>
+        {% if popular_inputs %}
+        <!-- Popular Combinations Grid -->
+        <div class="grid gap-8 md:grid-cols-2 xl:grid-cols-3 mb-20">
+            {% for input in popular_inputs %}
+            <div class="glass-effect rounded-3xl p-8 border border-white/10 card-hover cursor-pointer popular-card" 
+                 data-cultural-input="{{ input.cultural_input|e if input.cultural_input else '' }}">
+                
+                <!-- Request count badge -->
+                <div class="flex justify-between items-start mb-6">
+                    <span class="bg-gradient-to-r from-orange-600/20 to-red-600/20 text-orange-400 px-4 py-2 rounded-full text-base font-semibold whitespace-nowrap border border-orange-500/30">
+                        <i class="fas fa-users mr-2"></i>
+                        {{ input.request_count or 0 }} {% if (input.request_count or 0) == 1 %}user{% else %}users{% endif %}
+                    </span>
+                    {% if input.avg_rating and input.avg_rating > 0 %}
+                    <div class="flex items-center text-yellow-400">
+                        <i class="fas fa-star mr-2 text-lg"></i>
+                        <span class="text-base font-semibold text-white">{{ "%.1f"|format(input.avg_rating) }}</span>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
+                
+                <!-- Cultural input -->
+                <div class="mb-6 min-h-[6rem]">
+                    <p class="text-white/90 font-semibold text-lg leading-relaxed break-words">
+                        "{{ input.cultural_input or 'Cultural combination' }}"
+                    </p>
+                </div>
+                
+                <!-- Last used -->
+                <div class="text-white/60 text-base flex items-center mb-6">
+                    <i class="fas fa-clock mr-3 text-purple-400"></i>
+                    Last used {{ input.last_requested.strftime('%B %d') if input.last_requested else 'recently' }}
+                </div>
+                
+                <!-- Click hint -->
+                <div class="pt-6 border-t border-white/10">
+                    <p class="text-purple-400 font-semibold text-base">
+                        <i class="fas fa-mouse-pointer mr-2"></i>
+                        Click to try this combination
+                    </p>
+                </div>
             </div>
-            
-            <!-- Cultural input -->
-            <div class="mb-4 min-h-[4rem]">
-                <p class="text-gray-800 font-medium leading-relaxed break-words">
-                    "{{ input.cultural_input }}"
-                </p>
+            {% endfor %}
+        </div>
+
+        <!-- Try your own section -->
+        <div class="glass-effect rounded-3xl p-12 border border-white/10 card-hover text-center">
+            <div class="w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-glow">
+                <i class="fas fa-magic text-white text-3xl"></i>
             </div>
-            
-            <!-- Last used -->
-            <div class="text-xs text-gray-500 flex items-center mb-4">
-                <i class="fas fa-clock mr-1"></i>
-                Last used {{ input.last_requested.strftime('%B %d') if input.last_requested else 'recently' }}
+            <h3 class="text-3xl font-bold text-white mb-6">
+                Don't see your vibe here?
+            </h3>
+            <p class="text-white/70 text-xl mb-10 max-w-3xl mx-auto leading-relaxed">
+                Create your own unique cultural combination and discover your personal aesthetic identity. 
+                Your preferences will help inspire others and contribute to our growing community of style enthusiasts.
+            </p>
+            <a href="{{ url_for('index') }}" 
+               class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-10 py-5 rounded-2xl font-bold text-xl transition-all duration-300 hover:scale-105 animate-glow inline-flex items-center">
+                <i class="fas fa-magic mr-3"></i>
+                Create My Style Identity
+            </a>
+        </div>
+
+        {% else %}
+        <!-- Empty state -->
+        <div class="text-center py-20">
+            <div class="w-32 h-32 bg-gradient-to-r from-gray-600 to-gray-800 rounded-full flex items-center justify-center mx-auto mb-12 animate-glow">
+                <i class="fas fa-chart-line text-white text-5xl"></i>
             </div>
+            <h3 class="text-4xl font-bold text-white mb-8">
+                No Trending Combinations Yet
+            </h3>
+            <p class="text-white/70 text-xl mb-12 max-w-2xl mx-auto leading-relaxed">
+                Be the first to explore cultural style combinations! Your preferences will help inspire others 
+                and create a vibrant community of style enthusiasts. Start your journey today and discover your unique aesthetic identity.
+            </p>
+            <a href="{{ url_for('index') }}" 
+               class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-10 py-5 rounded-2xl font-bold text-xl transition-all duration-300 hover:scale-105 animate-glow inline-flex items-center">
+                <i class="fas fa-rocket mr-3"></i>
+                Start Exploring
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Statistics Section -->
+{% if popular_inputs %}
+<section class="relative py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass-effect rounded-3xl p-12 border border-white/10 card-hover">
+            <h2 class="text-4xl font-bold text-white text-center mb-12">
+                <i class="fas fa-chart-bar text-purple-400 mr-3"></i>
+                Community Insights
+            </h2>
             
-            <!-- Click hint -->
-            <div class="pt-4 border-t border-gray-100">
-                <p class="text-sm text-purple-600 font-medium">
-                    <i class="fas fa-mouse-pointer mr-1"></i>
-                    Click to try this combination
-                </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Total Combinations -->
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-glow">
+                        <i class="fas fa-layer-group text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">{{ popular_inputs|length }}</h3>
+                    <p class="text-white/70 text-lg">Unique Combinations</p>
+                </div>
+                
+                <!-- Total Users -->
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-glow">
+                        <i class="fas fa-users text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">
+                        {% set total_users = popular_inputs|sum(attribute='request_count') %}
+                        {{ total_users or 0 }}
+                    </h3>
+                    <p class="text-white/70 text-lg">Total Users</p>
+                </div>
+                
+                <!-- Average Rating -->
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-glow">
+                        <i class="fas fa-star text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">
+                        {% set avg_rating = popular_inputs|selectattr('avg_rating')|map(attribute='avg_rating')|list %}
+                        {% if avg_rating and avg_rating|length > 0 %}
+                            {{ "%.1f"|format(avg_rating|sum / avg_rating|length) }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </h3>
+                    <p class="text-white/70 text-lg">Average Rating</p>
+                </div>
             </div>
         </div>
-        {% endfor %}
     </div>
-
-    <!-- Try your own section -->
-    <div class="mt-12 text-center bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-8 border border-purple-200">
-        <h3 class="text-2xl font-bold text-gray-900 mb-4">
-            Don't see your vibe here?
-        </h3>
-        <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
-            Create your own unique cultural combination and discover your personal aesthetic identity.
-        </p>
-        <a href="{{ url_for('index') }}" 
-           class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-lg font-semibold transition duration-200 inline-flex items-center shadow-lg hover:shadow-xl transform hover:scale-105">
-            <i class="fas fa-magic mr-3"></i>
-            Create My Style Identity
-        </a>
-    </div>
-
-    {% else %}
-    <!-- Empty state -->
-    <div class="text-center py-16">
-        <i class="fas fa-chart-line text-gray-400 text-6xl mb-6"></i>
-        <h3 class="text-2xl font-bold text-gray-900 mb-4">
-            No Popular Combinations Yet
-        </h3>
-        <p class="text-gray-600 mb-8 max-w-md mx-auto">
-            Be the first to explore cultural style combinations! Your preferences will help inspire others.
-        </p>
-        <a href="{{ url_for('index') }}" 
-           class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-lg font-semibold transition duration-200 inline-flex items-center shadow-lg hover:shadow-xl transform hover:scale-105">
-            <i class="fas fa-rocket mr-3"></i>
-            Start Exploring
-        </a>
-    </div>
-    {% endif %}
-</div>
+</section>
+{% endif %}
 
 <script>
 // Function to use a popular input
-function useInput(culturalInput) {
+function useInput(culturalInput, card) {
     try {
+        console.log('Using popular input:', culturalInput);
+        
+        // Validate inputs
+        if (!culturalInput || !card) {
+            console.error('Invalid inputs to useInput function');
+            return;
+        }
+        
         // Store the input and redirect to main page
         sessionStorage.setItem('popularInput', culturalInput);
         
         // Show loading feedback
-        var card = event.currentTarget;
-        card.style.opacity = '0.7';
-        card.style.pointerEvents = 'none';
+        if (card.style) {
+            card.style.opacity = '0.7';
+            card.style.pointerEvents = 'none';
+            card.style.transform = 'scale(0.95)';
+        }
         
         // Add loading text
         var loadingText = document.createElement('div');
-        loadingText.className = 'text-purple-600 text-sm font-medium mt-2';
-        loadingText.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Loading...';
-        card.appendChild(loadingText);
+        loadingText.className = 'text-purple-400 text-base font-semibold mt-4 text-center animate-pulse';
+        loadingText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading your style combination...';
+        
+        // Safely append loading text
+        if (card.appendChild) {
+            card.appendChild(loadingText);
+        }
+        
+        // Show success feedback
+        setTimeout(function() {
+            if (loadingText && loadingText.innerHTML) {
+                loadingText.innerHTML = '<i class="fas fa-check mr-2"></i>Combination loaded! Redirecting...';
+                loadingText.className = 'text-green-400 text-base font-semibold mt-4 text-center';
+            }
+        }, 400);
         
         // Redirect after a brief delay to show feedback
         setTimeout(function() {
-            window.location.href = '{{ url_for("index") }}';
-        }, 500);
+            try {
+                window.location.href = '{{ url_for("index") }}';
+            } catch (redirectError) {
+                console.error('Redirect error:', redirectError);
+                // Fallback redirect
+                window.location.href = '/';
+            }
+        }, 1000);
         
     } catch (error) {
         console.error('Error using popular input:', error);
-        // Fallback: redirect without sessionStorage
-        window.location.href = '{{ url_for("index") }}';
+        
+        // Show error feedback
+        try {
+            var errorText = document.createElement('div');
+            errorText.className = 'text-red-400 text-base font-semibold mt-4 text-center';
+            errorText.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Error loading combination. Please try again.';
+            
+            if (card && card.appendChild) {
+                card.appendChild(errorText);
+            }
+            
+            // Reset card state after error
+            setTimeout(function() {
+                if (card && card.style) {
+                    card.style.opacity = '1';
+                    card.style.pointerEvents = 'auto';
+                    card.style.transform = 'translateY(0) scale(1)';
+                }
+                if (errorText && errorText.parentNode) {
+                    errorText.parentNode.removeChild(errorText);
+                }
+            }, 2000);
+        } catch (errorHandlingError) {
+            console.error('Error in error handling:', errorHandlingError);
+        }
     }
 }
 
 // Add click event listeners to all cards
 document.addEventListener('DOMContentLoaded', function() {
-    var cards = document.querySelectorAll('.popular-card');
-    cards.forEach(function(card) {
-        card.addEventListener('click', function(e) {
-            var culturalInput = this.getAttribute('data-cultural-input');
-            if (culturalInput) {
-                e.preventDefault();
-                useInput(culturalInput);
+    try {
+        var cards = document.querySelectorAll('.popular-card');
+        console.log('Found', cards.length, 'popular cards');
+        
+        cards.forEach(function(card, index) {
+            try {
+                card.addEventListener('click', function(e) {
+                    // Prevent clicking on child elements that shouldn't trigger the card click
+                    if (e.target.tagName === 'A' || e.target.closest('a')) {
+                        return;
+                    }
+                    
+                    var culturalInput = this.getAttribute('data-cultural-input');
+                    if (culturalInput) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        useInput(culturalInput, this);
+                    }
+                });
+                
+                // Add keyboard support for accessibility
+                card.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        var culturalInput = this.getAttribute('data-cultural-input');
+                        if (culturalInput) {
+                            useInput(culturalInput, this);
+                        }
+                    }
+                });
+                
+                // Make cards focusable for accessibility
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('role', 'button');
+                var culturalInput = this.getAttribute('data-cultural-input') || 'cultural combination';
+                card.setAttribute('aria-label', 'Click to try this cultural combination: ' + culturalInput);
+                
+                // Add hover effects for better UX
+                card.addEventListener('mouseenter', function() {
+                    if (this.style.pointerEvents !== 'none') {
+                        this.style.transform = 'translateY(-8px) scale(1.02)';
+                    }
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    if (this.style.pointerEvents !== 'none') {
+                        this.style.transform = 'translateY(0) scale(1)';
+                    }
+                });
+                
+            } catch (cardError) {
+                console.error('Error setting up card', index, ':', cardError);
             }
         });
-    });
+        
+        console.log('Popular page JavaScript loaded successfully');
+        
+    } catch (error) {
+        console.error('Error in popular page setup:', error);
+    }
 });
 </script>
-
 {% endblock %}

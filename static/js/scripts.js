@@ -398,7 +398,8 @@ window.addEventListener('load', function() {
 // Error boundary for unhandled JavaScript errors
 window.addEventListener('error', function(e) {
     console.error('Unhandled error:', e.error);
-    showAlert('An unexpected error occurred. Please refresh the page.', 'error');
+    // Temporarily disable the alert to prevent the notification issue
+    // showAlert('An unexpected error occurred. Please refresh the page.', 'error');
 });
 
 // Service worker registration for offline functionality (future enhancement)

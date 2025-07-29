@@ -1,198 +1,301 @@
 {% extends "base.html" %}
 
-{% block content %}
-<!-- Authentication Status -->
-<div class="mb-4 sm:mb-6">
-    {% if current_user.is_authenticated %}
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 space-y-3 sm:space-y-0">
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-                    <span class="text-white font-semibold text-sm sm:text-base">{{ current_user.username[0].upper() }}</span>
-                </div>
-                <div>
-                    <p class="text-xs sm:text-sm text-gray-600">Welcome back,</p>
-                    <p class="font-semibold text-gray-800 text-sm sm:text-base">{{ current_user.username }}</p>
-                </div>
-            </div>
-            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-                <a href="{{ url_for('profile') }}" 
-                   class="bg-purple-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-center"
-                   aria-label="View your profile">
-                    Profile
-                </a>
-                <a href="{{ url_for('logout') }}" 
-                   class="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-center"
-                   aria-label="Logout">
-                    Logout
-                </a>
-            </div>
-        </div>
-    {% else %}
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
-                <div class="flex-1">
-                    <p class="text-blue-800 font-medium text-sm sm:text-base">Create an account to save your style history!</p>
-                    <p class="text-blue-600 text-xs sm:text-sm">Track your style evolution and get personalized recommendations.</p>
-                </div>
-                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-                    <a href="{{ url_for('login') }}" 
-                       class="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
-                       aria-label="Login to your account">
-                        Login
-                    </a>
-                    <a href="{{ url_for('register') }}" 
-                       class="bg-purple-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 text-center"
-                       aria-label="Create new account">
-                        Register
-                    </a>
-                </div>
-            </div>
-        </div>
-    {% endif %}
-</div>
-<div class="text-center mb-6 sm:mb-8 lg:mb-12">
-    <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
-        Discover Your <span class="text-purple-600">Cultural Style</span>
-    </h1>
-    <p class="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto mb-4 sm:mb-6 lg:mb-8 px-2 sm:px-4">
-        Transform your cultural passions into personalized fashion aesthetics. 
-        No body metrics, no personal data—just pure cultural intelligence.
-    </p>
-    
-    <!-- Example tags -->
-    <div class="flex flex-wrap justify-center gap-2 mb-6 sm:mb-8 px-4">
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Music</span>
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Movies</span>
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Games</span>
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Books</span>
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Art</span>
-        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs sm:text-sm">Shows</span>
-    </div>
-</div>
+{% block title %}Mimesis - AI-Powered Cultural Style Intelligence{% endblock %}
 
-<!-- Main input form -->
-<div class="bg-white rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 md:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8">
-    <form id="cultural-form" action="{{ url_for('recommend') }}" method="POST" class="space-y-3 sm:space-y-4 md:space-y-6">
-        <div>
-            <label for="cultural_preferences" class="block text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">
-                <i class="fas fa-sparkles text-purple-600 mr-2"></i>
-                What defines your cultural vibe?
-            </label>
-            <textarea 
-                id="cultural_preferences" 
-                name="cultural_preferences" 
-                rows="3" 
-                class="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-gray-900 placeholder-gray-500 text-sm sm:text-base"
-                placeholder="Doja Cat, Blade Runner 2049, Death Stranding, Japanese minimalism, indie rock, cyberpunk aesthetic..."
-                required
-            ></textarea>
-            <p class="text-xs sm:text-sm text-gray-600 mt-2">
-                <i class="fas fa-lightbulb text-yellow-500 mr-1"></i>
-                Mix artists, movies, games, books, genres, or any cultural influences that resonate with you
+{% block content %}
+<!-- Hero Section -->
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden py-20">
+    <!-- Background Elements -->
+    <div class="absolute inset-0">
+        <div class="absolute top-20 left-20 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-float"></div>
+        <div class="absolute bottom-20 right-20 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-float" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-float" style="animation-delay: 4s;"></div>
+    </div>
+
+    <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <!-- Main Heading -->
+        <div class="mb-12">
+            <h1 class="text-5xl sm:text-7xl lg:text-8xl font-black text-gradient font-space mb-8 leading-tight">
+                Transform Your
+                <span class="block shimmer bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                    Cultural Identity
+                </span>
+                Into Style
+            </h1>
+            <p class="text-xl sm:text-2xl lg:text-3xl text-white/80 font-medium max-w-4xl mx-auto leading-relaxed">
+                AI-powered fashion recommendations that understand your cultural background, 
+                creating personalized style identities that celebrate diversity and inclusivity.
+            </p>
+        </div>
+
+        <!-- Authentication Status -->
+        {% if current_user.is_authenticated %}
+            <div class="mb-16">
+                <div class="inline-flex items-center space-x-4 bg-white/10 backdrop-blur-sm rounded-full px-8 py-4 border border-white/20">
+                    <div class="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="text-white/90 font-medium text-lg">Welcome back, {{ current_user.username }}!</span>
+                </div>
+            </div>
+        {% else %}
+            <div class="mb-16">
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-6 sm:space-y-0 sm:space-x-8">
+                    <a href="{{ url_for('login') }}" class="bg-white/10 backdrop-blur-sm text-white px-10 py-5 rounded-xl font-semibold hover:bg-white/20 transition-all duration-300 hover:scale-105 border border-white/20 text-lg">
+                        <i class="fas fa-sign-in-alt mr-3"></i>
+                        Sign In
+                    </a>
+                    <a href="{{ url_for('register') }}" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-10 py-5 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105 animate-glow text-lg">
+                        <i class="fas fa-user-plus mr-3"></i>
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Main Input Form -->
+        {% if current_user.is_authenticated %}
+            <div class="max-w-5xl mx-auto">
+                <form method="POST" action="{{ url_for('recommend') }}" class="space-y-10">
+                    <!-- Input Section -->
+                    <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
+                        <div class="text-center mb-10">
+                            <h2 class="text-4xl font-bold text-white mb-6">Share Your Cultural Story</h2>
+                            <p class="text-white/70 text-xl">Tell us about your cultural influences, interests, and inspirations</p>
+                        </div>
+                        
+                        <div class="space-y-8">
+                            <div>
+                                <label for="cultural_preferences" class="block text-white/90 font-semibold mb-4 text-xl">
+                                    <i class="fas fa-globe-americas mr-3 text-purple-400"></i>
+                                    Cultural Preferences
+                                </label>
+                                <textarea 
+                                    id="cultural_preferences" 
+                                    name="cultural_preferences" 
+                                    rows="5" 
+                                    class="w-full px-8 py-6 bg-white/5 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm resize-none text-lg"
+                                    placeholder="e.g., AR Rahman, Radhe Shyam, Chess, 20s cinema, vintage, Bollywood, classical music, street art, sustainable fashion..."
+                                    required
+                                ></textarea>
+                                <p class="text-white/60 text-base mt-4">
+                                    <i class="fas fa-lightbulb mr-2 text-yellow-400"></i>
+                                    Include artists, movies, music, hobbies, cultural elements, or any influences that inspire your style
+                                </p>
+                            </div>
+                            
+                            <button 
+                                type="submit" 
+                                class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-6 px-10 rounded-2xl font-bold text-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105 animate-glow group"
+                            >
+                                <i class="fas fa-magic mr-3 group-hover:rotate-12 transition-transform"></i>
+                                Generate My Style Identity
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <!-- Call to Action for Non-Authenticated Users -->
+            <div class="max-w-5xl mx-auto">
+                <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
+                    <div class="text-center">
+                        <div class="w-24 h-24 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-glow">
+                            <i class="fas fa-lock text-white text-3xl"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold text-white mb-6">Unlock Your Style Journey</h2>
+                        <p class="text-white/70 mb-8 text-xl">Sign in or create an account to start your personalized style discovery</p>
+                        <div class="flex flex-col sm:flex-row items-center justify-center space-y-6 sm:space-y-0 sm:space-x-8">
+                            <a href="{{ url_for('login') }}" class="bg-white/10 backdrop-blur-sm text-white px-10 py-5 rounded-xl font-semibold hover:bg-white/20 transition-all duration-300 hover:scale-105 border border-white/20 text-lg">
+                                <i class="fas fa-sign-in-alt mr-3"></i>
+                                Sign In
+                            </a>
+                            <a href="{{ url_for('register') }}" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-10 py-5 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105 animate-glow text-lg">
+                                <i class="fas fa-user-plus mr-3"></i>
+                                Create Account
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="relative py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-20">
+            <h2 class="text-5xl font-bold text-white mb-8">Why Choose Mimesis?</h2>
+            <p class="text-2xl text-white/70 max-w-4xl mx-auto">
+                Experience the future of fashion with AI that understands your cultural heritage
             </p>
         </div>
         
-        <button 
-            type="submit" 
-            id="submit-btn"
-            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 sm:py-3 md:py-4 px-3 sm:px-4 md:px-6 rounded-lg transition duration-200 ease-in-out transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 text-sm sm:text-base"
-        >
-            <span id="btn-text">
-                <i class="fas fa-magic mr-2"></i>
-                Generate My Style Identity
-            </span>
-            <span id="btn-loading" class="hidden">
-                <i class="fas fa-spinner fa-spin mr-2"></i>
-                Creating Your Aesthetic...
-            </span>
-        </button>
-    </form>
-</div>
-
-<!-- Examples section -->
-<div class="bg-gray-50 rounded-xl p-3 sm:p-4 md:p-6">
-    <h3 class="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-        <i class="fas fa-palette text-purple-600 mr-2"></i>
-        Example Cultural Combinations
-    </h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-        <div class="bg-white p-2 sm:p-3 md:p-4 rounded-lg border hover:shadow-md transition duration-200">
-            <h4 class="font-medium text-gray-900 mb-1 sm:mb-2 text-xs sm:text-sm md:text-base">Neo-Futuristic Minimalist</h4>
-            <p class="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">Blade Runner 2049, Aphex Twin, Japanese architecture, The Matrix</p>
-            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">→ "Cyber-Zen Aesthetic"</span>
-        </div>
-        <div class="bg-white p-2 sm:p-3 md:p-4 rounded-lg border hover:shadow-md transition duration-200">
-            <h4 class="font-medium text-gray-900 mb-1 sm:mb-2 text-xs sm:text-sm md:text-base">Retro Soul Vibes</h4>
-            <p class="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">SZA, Red Dead Redemption, vintage photography, 70s cinema</p>
-            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">→ "Desert Soul Muse"</span>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <!-- Feature 1 -->
+            <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
+                <div class="w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center mb-8 animate-glow">
+                    <i class="fas fa-brain text-white text-3xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-6">Cultural Intelligence</h3>
+                <p class="text-white/70 text-lg leading-relaxed">
+                    Our AI understands cultural nuances, traditions, and modern influences to create authentic style recommendations.
+                </p>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
+                <div class="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-8 animate-glow">
+                    <i class="fas fa-users text-white text-3xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-6">Inclusive Design</h3>
+                <p class="text-white/70 text-lg leading-relaxed">
+                    Celebrating diversity with style recommendations that honor all cultural backgrounds and body types.
+                </p>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
+                <div class="w-20 h-20 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl flex items-center justify-center mb-8 animate-glow">
+                    <i class="fas fa-leaf text-white text-3xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-6">Sustainable Fashion</h3>
+                <p class="text-white/70 text-lg leading-relaxed">
+                    Promoting eco-friendly brands and sustainable practices while maintaining style and cultural authenticity.
+                </p>
+            </div>
         </div>
     </div>
-</div>
+</section>
 
-<!-- Features highlight -->
-<div class="mt-6 sm:mt-8 md:mt-12 text-center">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-        <div class="flex flex-col items-center p-3 sm:p-4">
-            <div class="bg-purple-100 p-2 sm:p-3 rounded-full mb-2 sm:mb-3">
-                <i class="fas fa-shield-alt text-purple-600 text-base sm:text-lg md:text-xl"></i>
-            </div>
-            <h3 class="font-semibold text-gray-900 mb-1 sm:mb-2 text-xs sm:text-sm md:text-base">Privacy First</h3>
-            <p class="text-xs sm:text-sm text-gray-600">No body metrics, income data, or personal information required</p>
+<!-- Example Section -->
+<section class="relative py-24">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-20">
+            <h2 class="text-5xl font-bold text-white mb-8">See It In Action</h2>
+            <p class="text-2xl text-white/70">
+                Discover how cultural inputs transform into personalized style identities
+            </p>
         </div>
-        <div class="flex flex-col items-center p-3 sm:p-4">
-            <div class="bg-purple-100 p-2 sm:p-3 rounded-full mb-2 sm:mb-3">
-                <i class="fas fa-globe text-purple-600 text-base sm:text-lg md:text-xl"></i>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <!-- Example Input -->
+            <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
+                <h3 class="text-3xl font-bold text-white mb-8">
+                    <i class="fas fa-arrow-right text-purple-400 mr-3"></i>
+                    Cultural Input
+                </h3>
+                <div class="space-y-6">
+                    <div class="bg-white/5 rounded-2xl p-6 border border-white/10">
+                        <p class="text-white/90 font-medium text-lg">"AR Rahman, Radhe Shyam, Chess, 20s cinema, vintage"</p>
+                    </div>
+                    <div class="flex items-center space-x-4 text-white/60 text-lg">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-music text-purple-400"></i>
+                            <span>Music Composer</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-film text-blue-400"></i>
+                            <span>Film</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-chess text-green-400"></i>
+                            <span>Strategy</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <h3 class="font-semibold text-gray-900 mb-1 sm:mb-2 text-xs sm:text-sm md:text-base">Globally Inclusive</h3>
-            <p class="text-xs sm:text-sm text-gray-600">Brands and styles from every culture and budget range</p>
-        </div>
-        <div class="flex flex-col items-center p-3 sm:p-4 sm:col-span-2 lg:col-span-1">
-            <div class="bg-purple-100 p-2 sm:p-3 rounded-full mb-2 sm:mb-3">
-                <i class="fas fa-recycle text-purple-600 text-base sm:text-lg md:text-xl"></i>
+            
+            <!-- Example Output -->
+            <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
+                <h3 class="text-3xl font-bold text-white mb-8">
+                    <i class="fas fa-magic text-pink-400 mr-3"></i>
+                    Style Identity
+                </h3>
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl p-6 border border-purple-500/30">
+                        <h4 class="text-2xl font-bold text-gradient mb-4">Vintage Tamil Cinematic Maestro</h4>
+                        <p class="text-white/80 text-lg">A sophisticated blend of classical elegance and modern creativity</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="bg-white/5 rounded-xl p-4">
+                            <p class="text-white/60 text-sm mb-2">Brands</p>
+                            <p class="text-white/90 font-medium">Etro, Christy Dawn</p>
+                        </div>
+                        <div class="bg-white/5 rounded-xl p-4">
+                            <p class="text-white/60 text-sm mb-2">Colors</p>
+                            <p class="text-white/90 font-medium">Ochre, Sage, Cream</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <h3 class="font-semibold text-gray-900 mb-1 sm:mb-2 text-xs sm:text-sm md:text-base">Sustainable Focus</h3>
-            <p class="text-xs sm:text-sm text-gray-600">Thrift, vintage, indie, and DIY options prioritized</p>
         </div>
     </div>
-</div>
+</section>
+
+<!-- CTA Section -->
+<section class="relative py-24">
+    <div class="max-w-5xl mx-auto text-center">
+        <div class="glass-effect rounded-3xl p-16 border border-white/10 card-hover">
+            <h2 class="text-5xl font-bold text-white mb-8">Ready to Discover Your Style?</h2>
+            <p class="text-2xl text-white/70 mb-12">
+                Join thousands of users who have transformed their cultural identity into stunning style recommendations
+            </p>
+            {% if not current_user.is_authenticated %}
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-6 sm:space-y-0 sm:space-x-8">
+                    <a href="{{ url_for('register') }}" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-12 py-6 rounded-2xl font-bold text-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105 animate-glow">
+                        <i class="fas fa-rocket mr-3"></i>
+                        Start Your Journey
+                    </a>
+                    <a href="{{ url_for('login') }}" class="bg-white/10 backdrop-blur-sm text-white px-12 py-6 rounded-2xl font-semibold hover:bg-white/20 transition-all duration-300 hover:scale-105 border border-white/20 text-xl">
+                        <i class="fas fa-sign-in-alt mr-3"></i>
+                        Sign In
+                    </a>
+                </div>
+            {% else %}
+                <a href="#top" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-12 py-6 rounded-2xl font-bold text-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105 animate-glow inline-block">
+                    <i class="fas fa-magic mr-3"></i>
+                    Generate New Style
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
 
 <script>
 // Handle popular input from sessionStorage
 document.addEventListener('DOMContentLoaded', function() {
-    var popularInput = sessionStorage.getItem('popularInput');
+    // Check if there's a popular input stored in sessionStorage
+    const popularInput = sessionStorage.getItem('popularInput');
+    
     if (popularInput) {
-        var textarea = document.getElementById('cultural_preferences');
+        // Find the textarea and populate it
+        const textarea = document.getElementById('cultural_preferences');
         if (textarea) {
             textarea.value = popularInput;
-            textarea.focus();
-            sessionStorage.removeItem('popularInput');
             
-            // Trigger input event for validation
-            textarea.dispatchEvent(new Event('input'));
+            // Add a visual indicator that the input was pre-filled
+            textarea.style.borderColor = '#8b5cf6'; // Purple border
+            textarea.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.3)'; // Purple glow
+            
+            // Show a success message
+            const successMessage = document.createElement('div');
+            successMessage.className = 'mt-4 p-4 bg-green-600/20 border border-green-500/30 rounded-2xl text-green-400 font-semibold';
+            successMessage.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Popular combination loaded! Click "Generate My Style Identity" to continue.';
+            textarea.parentNode.appendChild(successMessage);
+            
+            // Remove the popular input from sessionStorage
+            sessionStorage.removeItem('popularInput');
             
             // Scroll to the form
             textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Remove the visual indicator after 3 seconds
+            setTimeout(function() {
+                textarea.style.borderColor = '';
+                textarea.style.boxShadow = '';
+            }, 3000);
         }
     }
 });
-
-// Form submission handling
-document.getElementById('cultural-form').addEventListener('submit', function(e) {
-    var submitBtn = document.getElementById('submit-btn');
-    var btnText = document.getElementById('btn-text');
-    var btnLoading = document.getElementById('btn-loading');
-    
-    // Show loading state
-    submitBtn.disabled = true;
-    btnText.classList.add('hidden');
-    btnLoading.classList.remove('hidden');
-});
-
-// Auto-resize textarea
-document.getElementById('cultural_preferences').addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
-});
 </script>
-
 {% endblock %}
