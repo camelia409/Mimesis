@@ -19,19 +19,39 @@ db = SQLAlchemy(model_class=Base)
 
 # Create the Flask app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 
-# Configure the database
-database_url = os.environ.get("DATABASE_URL")
-if not database_url:
-    # Fallback for development
-    database_url = "sqlite:///mimesis.db"
+# Configuration
+app.config['SECRET_KEY'] = os.getenv('SESSION_SECRET', 'dev-secret-key-change-in-production')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///mimesis.db')
 
-app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
+# Handle SQLite database URL for cloud platforms
+if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Configure database engine options based on database type
+if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite'):
+    # SQLite-specific configuration to prevent locking issues
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_size": 1,  # Single connection for SQLite
+        "max_overflow": 0,  # No overflow for SQLite
+        "pool_timeout": 30,
+        "connect_args": {
+            "timeout": 30,  # SQLite timeout
+            "check_same_thread": False,  # Allow multi-threading
+        }
+    }
+else:
+    # PostgreSQL/MySQL configuration
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+        "pool_size": 10,
+        "max_overflow": 20,
+        "pool_timeout": 30,
+    }
 
 # Initialize the app with the database extension
 db.init_app(app)
@@ -70,5 +90,10 @@ with app.app_context():
 from routes import *
 
 print("QLOO_API_KEY loaded:", os.environ.get("QLOO_API_KEY"))
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 
 

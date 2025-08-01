@@ -1,4 +1,4 @@
-/* Custom styles for Mimesis */
+/* Custom styles for Mimesis - Responsive Design */
 
 /* Loading spinner animation */
 @keyframes spin {
@@ -77,21 +77,6 @@ button:disabled {
     }
 }
 
-/* Responsive design improvements */
-@media (max-width: 640px) {
-    .text-4xl {
-        font-size: 2.25rem;
-    }
-    
-    .text-5xl {
-        font-size: 3rem;
-    }
-    
-    .p-8 {
-        padding: 1.5rem;
-    }
-}
-
 /* Custom form styling */
 .form-input {
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -139,19 +124,259 @@ button:disabled {
     border-left: 4px solid #ef4444;
 }
 
-/* Mobile-specific adjustments */
-@media (max-width: 768px) {
-    .container {
-        padding-left: 1rem;
-        padding-right: 1rem;
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Mobile First - Base styles (320px and up) */
+@media (max-width: 639px) {
+    /* Typography adjustments */
+    .text-5xl {
+        font-size: 2.5rem !important;
+        line-height: 1.1 !important;
     }
     
-    .grid {
-        gap: 1rem;
+    .text-4xl {
+        font-size: 2rem !important;
+        line-height: 1.2 !important;
+    }
+    
+    .text-3xl {
+        font-size: 1.75rem !important;
+        line-height: 1.3 !important;
+    }
+    
+    .text-2xl {
+        font-size: 1.5rem !important;
+        line-height: 1.4 !important;
     }
     
     .text-xl {
-        font-size: 1.125rem;
+        font-size: 1.25rem !important;
+        line-height: 1.5 !important;
+    }
+    
+    /* Spacing adjustments */
+    .p-12 {
+        padding: 1.5rem !important;
+    }
+    
+    .p-10 {
+        padding: 1.25rem !important;
+    }
+    
+    .p-8 {
+        padding: 1rem !important;
+    }
+    
+    .py-20 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+    
+    .mb-12 {
+        margin-bottom: 2rem !important;
+    }
+    
+    .mb-8 {
+        margin-bottom: 1.5rem !important;
+    }
+    
+    /* Container adjustments */
+    .max-w-6xl {
+        max-width: 100% !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    /* Grid adjustments */
+    .grid-cols-1 {
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    }
+    
+    /* Button adjustments */
+    .px-10 {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+    
+    .py-6 {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    /* Form adjustments */
+    textarea {
+        font-size: 1rem !important;
+        padding: 1rem !important;
+    }
+    
+    /* Star rating adjustments */
+    .text-5xl {
+        font-size: 2.5rem !important;
+    }
+    
+    /* Background elements adjustments */
+    .w-72, .w-96, .w-80 {
+        width: 8rem !important;
+        height: 8rem !important;
+    }
+    
+    /* Glass effect adjustments */
+    .glass-effect {
+        backdrop-filter: blur(10px) !important;
+    }
+}
+
+/* Small tablets (640px and up) */
+@media (min-width: 640px) and (max-width: 767px) {
+    .text-5xl {
+        font-size: 3rem !important;
+    }
+    
+    .text-4xl {
+        font-size: 2.25rem !important;
+    }
+    
+    .p-12 {
+        padding: 2rem !important;
+    }
+    
+    .p-10 {
+        padding: 1.75rem !important;
+    }
+    
+    .grid-cols-1 {
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    }
+    
+    .grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Tablets (768px and up) */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .text-5xl {
+        font-size: 3.5rem !important;
+    }
+    
+    .text-4xl {
+        font-size: 2.5rem !important;
+    }
+    
+    .p-12 {
+        padding: 2.5rem !important;
+    }
+    
+    .p-10 {
+        padding: 2rem !important;
+    }
+    
+    .grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    
+    .grid-cols-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Desktop (1024px and up) */
+@media (min-width: 1024px) {
+    .text-5xl {
+        font-size: 4rem !important;
+    }
+    
+    .text-4xl {
+        font-size: 2.75rem !important;
+    }
+    
+    .p-12 {
+        padding: 3rem !important;
+    }
+    
+    .p-10 {
+        padding: 2.5rem !important;
+    }
+    
+    .grid-cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Large Desktop (1280px and up) */
+@media (min-width: 1280px) {
+    .text-5xl {
+        font-size: 4.5rem !important;
+    }
+    
+    .text-4xl {
+        font-size: 3rem !important;
+    }
+    
+    .p-12 {
+        padding: 3.5rem !important;
+    }
+    
+    .p-10 {
+        padding: 3rem !important;
+    }
+}
+
+/* Extra Large Desktop (1536px and up) */
+@media (min-width: 1536px) {
+    .text-5xl {
+        font-size: 5rem !important;
+    }
+    
+    .text-4xl {
+        font-size: 3.25rem !important;
+    }
+    
+    .p-12 {
+        padding: 4rem !important;
+    }
+    
+    .p-10 {
+        padding: 3.5rem !important;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) and (max-height: 600px) {
+    .min-h-screen {
+        min-height: auto !important;
+    }
+    
+    .py-20 {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    .mb-12 {
+        margin-bottom: 1rem !important;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .glass-effect {
+        backdrop-filter: blur(20px) !important;
+    }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .glass-effect {
+        background: rgba(0, 0, 0, 0.1) !important;
     }
 }
 
@@ -163,10 +388,17 @@ button:disabled {
     
     body {
         background: white !important;
+        color: black !important;
     }
     
     .shadow-lg {
         box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    
+    .glass-effect {
+        background: white !important;
+        backdrop-filter: none !important;
         border: 1px solid #e5e7eb !important;
     }
 }

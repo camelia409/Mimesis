@@ -1,452 +1,367 @@
 {% extends "base.html" %}
 
-{% block title %}Your Style Identity - Mimesis{% endblock %}
+{% block title %}Mimesis - Your Style Identity{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="relative py-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Back Navigation -->
-        <div class="mb-8">
-            <a href="{{ url_for('index') }}" class="inline-flex items-center text-white/60 hover:text-white transition-all duration-300 hover:scale-105">
-                <i class="fas fa-arrow-left mr-3 text-lg"></i>
-                <span class="text-lg font-medium">Try Another Style</span>
-            </a>
+<!-- Hero Section with Results -->
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden py-8 sm:py-12 lg:py-20">
+    <!-- Background Elements -->
+    <div class="absolute inset-0">
+        <div class="absolute top-10 left-10 sm:top-20 sm:left-20 w-32 h-32 sm:w-72 sm:h-72 bg-purple-500/20 rounded-full blur-3xl animate-float"></div>
+        <div class="absolute bottom-10 right-10 sm:bottom-20 sm:right-20 w-40 h-40 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl animate-float" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 sm:w-80 sm:h-80 bg-blue-500/10 rounded-full blur-3xl animate-float" style="animation-delay: 4s;"></div>
+    </div>
+
+    <div class="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="text-center mb-8 sm:mb-12">
+            <h1 class="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-gradient font-space mb-4 sm:mb-8 leading-tight">
+                Your
+                <span class="block shimmer bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                    Style Identity
+                </span>
+                Revealed
+            </h1>
+            <p class="text-lg sm:text-xl md:text-2xl text-white/80 font-medium max-w-4xl mx-auto leading-relaxed px-4">
+                AI-powered fashion recommendations that understand your cultural background
+            </p>
         </div>
 
         <!-- User Input Display -->
-        <div class="glass-effect rounded-3xl p-8 border border-white/10 mb-12 card-hover">
+        <div class="glass-effect rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-10 mb-8 sm:mb-12 border border-white/10 card-hover">
             <div class="text-center">
-                <h2 class="text-2xl font-bold text-white mb-6">
-                    <i class="fas fa-quote-left text-purple-400 mr-3"></i>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-6">
+                    <i class="fas fa-quote-left text-purple-400 mr-2 sm:mr-3"></i>
                     Your Cultural Input
                 </h2>
-                <div class="bg-white/5 rounded-2xl p-6 border border-white/10">
-                    <p class="text-white/90 text-xl italic break-words">"{{ user_input }}"</p>
+                <div class="bg-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-white/20">
+                    <p class="text-lg sm:text-xl lg:text-2xl italic break-words text-white/90">"{{ user_input }}"</p>
                 </div>
+                <a href="{{ url_for('index') }}" class="mt-6 sm:mt-8 inline-flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105 animate-glow group">
+                    <i class="fas fa-arrow-left mr-2 sm:mr-3 group-hover:-translate-x-1 transition-transform"></i>
+                    Try Another Style
+                </a>
             </div>
         </div>
 
-        {% if recommendations.success %}
-        <!-- Main Aesthetic Identity -->
-        <div class="text-center mb-16">
-            <div class="glass-effect rounded-3xl p-12 border border-white/10 card-hover">
-                <div class="w-24 h-24 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-glow">
-                    <i class="fas fa-crown text-white text-4xl"></i>
+        {% if not recommendations.success %}
+            <!-- Error Display -->
+            <div class="glass-effect rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-10 mb-8 sm:mb-12 border border-red-500/30 card-hover">
+                <div class="text-center">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 bg-red-600/20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                        <i class="fas fa-exclamation-triangle text-red-400 text-2xl sm:text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl sm:text-3xl font-bold text-red-400 mb-3 sm:mb-4">Oops! Something went wrong</h3>
+                    <p class="text-white/80 mb-6 sm:mb-8 text-base sm:text-lg lg:text-xl">{{ recommendations.error }}</p>
+                    <button onclick="window.location.reload()" class="bg-red-600 hover:bg-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-redo mr-2 sm:mr-3"></i>Try Again
+                    </button>
                 </div>
-                <h1 class="text-5xl font-black text-gradient font-space mb-6">{{ recommendations.aesthetic_name }}</h1>
-                <p class="text-white/70 text-xl">Your unique cultural style identity</p>
             </div>
-        </div>
+        {% else %}
+            <!-- Main Aesthetic Identity -->
+            <div class="glass-effect rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 mb-8 sm:mb-12 border border-white/10 card-hover text-center">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6 sm:mb-8 animate-glow">
+                    <i class="fas fa-crown text-white text-2xl sm:text-3xl lg:text-4xl"></i>
+                </div>
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black text-gradient font-space mb-4 sm:mb-6">{{ recommendations.aesthetic_name }}</h2>
+                <p class="text-lg sm:text-xl lg:text-2xl text-white/80 max-w-3xl mx-auto">Your unique cultural style identity, tailored to your preferences and history.</p>
+            </div>
 
-        <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-            <!-- Brand Suggestions -->
-            <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
-                <h3 class="text-3xl font-bold text-white mb-8">
-                    <i class="fas fa-tags text-purple-400 mr-3"></i>
+            <!-- Brand Recommendations -->
+            <div class="glass-effect rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 mb-8 sm:mb-12 border border-white/10 card-hover">
+                <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 sm:mb-8 text-center">
+                    <i class="fas fa-tags text-purple-400 mr-2 sm:mr-4"></i>
                     Curated Brands
                 </h3>
-                {% if recommendations.brands %}
-                    <div class="space-y-6">
-                        {% for brand in recommendations.brands %}
-                            <div class="bg-white/5 rounded-2xl p-6 border border-white/10 hover:border-purple-500/30 transition-all duration-300 hover:scale-105">
-                                <div class="flex items-center">
-                                    <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mr-4">
-                                        {% if brand.startswith('@') %}
-                                            <i class="fab fa-instagram text-white text-xl"></i>
-                                        {% elif 'thrift' in brand.lower() or 'vintage' in brand.lower() %}
-                                            <i class="fas fa-recycle text-white text-xl"></i>
-                                        {% elif 'diy' in brand.lower() or 'upcycle' in brand.lower() %}
-                                            <i class="fas fa-paint-brush text-white text-xl"></i>
-                                        {% else %}
-                                            <i class="fas fa-store text-white text-xl"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div class="flex-1">
-                                        <span class="text-white font-semibold text-lg">{{ brand }}</span>
-                                        {% if brand.startswith('@') %}
-                                            <p class="text-purple-400 text-sm mt-1">
-                                                <i class="fab fa-instagram mr-1"></i>Instagram Boutique
-                                            </p>
-                                        {% elif 'thrift' in brand.lower() or 'vintage' in brand.lower() %}
-                                            <p class="text-green-400 text-sm mt-1">
-                                                <i class="fas fa-leaf mr-1"></i>Sustainable & Eco-Friendly
-                                            </p>
-                                        {% elif 'diy' in brand.lower() or 'upcycle' in brand.lower() %}
-                                            <p class="text-orange-400 text-sm mt-1">
-                                                <i class="fas fa-magic mr-1"></i>Creative DIY Project
-                                            </p>
-                                        {% else %}
-                                            <p class="text-white/60 text-sm mt-1">
-                                                <i class="fas fa-globe mr-1"></i>Global Fashion Brand
-                                            </p>
-                                        {% endif %}
-                                    </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                    {% for brand in recommendations.brands %}
+                        <div class="bg-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-white/20 hover:border-purple-500/50 transition-all duration-300 group hover:scale-105">
+                            <div class="flex items-center mb-3 sm:mb-4">
+                                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg sm:rounded-xl flex items-center justify-center mr-3 sm:mr-4 group-hover:scale-110 transition-transform">
+                                    {% if brand.startswith('@') %}
+                                        <i class="fab fa-instagram text-white text-lg sm:text-xl"></i>
+                                    {% elif 'thrift' in brand.lower() or 'vintage' in brand.lower() %}
+                                        <i class="fas fa-recycle text-white text-lg sm:text-xl"></i>
+                                    {% elif 'diy' in brand.lower() or 'upcycle' in brand.lower() %}
+                                        <i class="fas fa-paint-brush text-white text-lg sm:text-xl"></i>
+                                    {% else %}
+                                        <i class="fas fa-store text-white text-lg sm:text-xl"></i>
+                                    {% endif %}
                                 </div>
+                                <span class="font-bold text-lg sm:text-xl text-white">{{ brand }}</span>
                             </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-white/60 italic text-lg">No brand suggestions available</p>
-                {% endif %}
-                
-                <div class="mt-8 p-6 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl border border-purple-500/30">
-                    <h4 class="text-lg font-semibold text-white mb-3">
-                        <i class="fas fa-lightbulb text-purple-400 mr-2"></i>
+                            <p class="text-white/70 text-sm sm:text-base lg:text-lg">
+                                {% if brand.startswith('@') %}
+                                    <i class="fab fa-instagram mr-2"></i>Instagram Boutique
+                                {% elif 'thrift' in brand.lower() or 'vintage' in brand.lower() %}
+                                    <i class="fas fa-leaf mr-2"></i>Sustainable & Eco-Friendly
+                                {% elif 'diy' in brand.lower() or 'upcycle' in brand.lower() %}
+                                    <i class="fas fa-magic mr-2"></i>Creative DIY Project
+                                {% else %}
+                                    <i class="fas fa-globe mr-2"></i>Global Fashion Brand
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-8 sm:mt-10 p-4 sm:p-6 lg:p-8 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-xl sm:rounded-2xl border border-purple-500/30">
+                    <h4 class="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-white">
+                        <i class="fas fa-lightbulb text-purple-400 mr-2 sm:mr-3"></i>
                         Personalized Brand Strategy
                     </h4>
-                    <p class="text-white/80 text-base leading-relaxed">
+                    <p class="text-white/80 text-base sm:text-lg leading-relaxed">
                         These brands are carefully selected to match your unique aesthetic identity. 
-                        We include diverse options from luxury to thrift, ensuring you can express your style at any budget while supporting sustainable and inclusive fashion.
+                        We include diverse options from luxury to thrift, ensuring you can express your style 
+                        at any budget while supporting sustainable and inclusive fashion.
                     </p>
                 </div>
             </div>
 
             <!-- Signature Outfit -->
-            <div class="glass-effect rounded-3xl p-10 border border-white/10 card-hover">
-                <h3 class="text-3xl font-bold text-white mb-8">
-                    <i class="fas fa-tshirt text-purple-400 mr-3"></i>
+            <div class="glass-effect rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 mb-8 sm:mb-12 border border-white/10 card-hover">
+                <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 sm:mb-8 text-center">
+                    <i class="fas fa-tshirt text-purple-400 mr-2 sm:mr-4"></i>
                     Signature Outfit
                 </h3>
-                <div class="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-2xl p-8 border border-purple-500/30">
-                    <p class="text-white/90 text-lg leading-relaxed">{{ recommendations.outfit }}</p>
-                </div>
-                <div class="mt-6 flex items-center text-white/60">
-                    <i class="fas fa-info-circle mr-3 text-purple-400 flex-shrink-0"></i>
-                    <span class="text-base">This outfit captures the essence of your cultural influences through carefully selected pieces and styling.</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Moodboard Section -->
-        <div class="glass-effect rounded-3xl p-10 border border-white/10 mb-16 card-hover">
-            <h3 class="text-3xl font-bold text-white mb-8">
-                <i class="fas fa-palette text-purple-400 mr-3"></i>
-                Aesthetic Moodboard
-            </h3>
-            <div class="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-2xl p-8 border border-purple-500/30">
-                <p class="text-white/90 text-lg leading-relaxed mb-6">{{ recommendations.moodboard }}</p>
-                <div class="p-6 bg-white/5 rounded-2xl border border-white/10">
-                    <h4 class="text-lg font-semibold text-white mb-3">
-                        <i class="fas fa-lightbulb text-purple-400 mr-2"></i>
-                        Visual Inspiration Guide
-                    </h4>
-                    <p class="text-white/70 text-base leading-relaxed">
-                        Use this description to create your own moodboard, find inspiration on Pinterest, or guide your shopping decisions. 
-                        The aesthetic captures the essence of your cultural influences through colors, textures, and themes.
-                    </p>
+                <div class="bg-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-10 border border-white/20">
+                    <div class="prose prose-invert max-w-none text-base sm:text-lg leading-relaxed">
+                        {% set outfit_sections = recommendations.outfit.split('\n\n') %}
+                        {% for section in outfit_sections %}
+                            {% if section.strip() %}
+                                <div class="mb-6 sm:mb-8 last:mb-0">
+                                    {% set lines = section.split('\n') %}
+                                    {% for line in lines %}
+                                        {% if line.strip() %}
+                                            {% if line.strip().isupper() or line.strip().endswith(':') %}
+                                                <h4 class="text-xl sm:text-2xl font-bold text-purple-400 mb-3 sm:mb-4">{{ line.strip() }}</h4>
+                                            {% else %}
+                                                <p class="text-white/90 mb-2 sm:mb-3 text-base sm:text-lg">{{ line.strip() }}</p>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Style Inspiration Grid -->
-        <div class="glass-effect rounded-3xl p-10 border border-white/10 mb-16 card-hover">
-            <h3 class="text-3xl font-bold text-white mb-8">
-                <i class="fas fa-magic text-purple-400 mr-3"></i>
-                Style Inspiration & Tips
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Cultural Context -->
-                <div class="bg-gradient-to-br from-blue-600/20 to-indigo-600/20 rounded-2xl p-6 border border-blue-500/30">
-                    <h4 class="text-xl font-semibold text-white mb-4">
-                        <i class="fas fa-globe text-blue-400 mr-2"></i>
-                        Cultural Context
-                    </h4>
-                    <p class="text-white/80 text-base leading-relaxed">
-                        Your style identity draws from diverse cultural influences, creating a unique fusion that celebrates global aesthetics. 
-                        This approach honors the rich traditions and contemporary expressions that shape your personal style journey.
-                    </p>
-                </div>
-                
-                <!-- Sustainability Focus -->
-                <div class="bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-2xl p-6 border border-green-500/30">
-                    <h4 class="text-xl font-semibold text-white mb-4">
-                        <i class="fas fa-leaf text-green-400 mr-2"></i>
-                        Sustainable Style
-                    </h4>
-                    <p class="text-white/80 text-base leading-relaxed">
-                        Embrace thrift shopping, vintage finds, and DIY projects to build your aesthetic sustainably. 
-                        Mix high-end pieces with affordable alternatives to create a unique, eco-conscious wardrobe.
-                    </p>
-                </div>
-                
-                <!-- Personal Expression -->
-                <div class="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-2xl p-6 border border-purple-500/30">
-                    <h4 class="text-xl font-semibold text-white mb-4">
-                        <i class="fas fa-heart text-purple-400 mr-2"></i>
-                        Personal Expression
-                    </h4>
-                    <p class="text-white/80 text-base leading-relaxed">
-                        Your style is a reflection of your cultural journey and personal story. 
-                        Don't be afraid to experiment, mix different elements, and make the aesthetic truly your own.
-                    </p>
-                </div>
-                
-                <!-- Shopping Strategy -->
-                <div class="bg-gradient-to-br from-orange-600/20 to-amber-600/20 rounded-2xl p-6 border border-orange-500/30">
-                    <h4 class="text-xl font-semibold text-white mb-4">
-                        <i class="fas fa-shopping-bag text-orange-400 mr-2"></i>
-                        Shopping Strategy
-                    </h4>
-                    <p class="text-white/80 text-base leading-relaxed">
-                        Start with key pieces that embody your aesthetic, then build around them. 
-                        Look for items that can be styled multiple ways and invest in quality over quantity.
-                    </p>
+            <!-- Style Vision Board -->
+            <div class="glass-effect rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 mb-8 sm:mb-12 border border-white/10 card-hover">
+                <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 sm:mb-8 text-center">
+                    <i class="fas fa-palette text-purple-400 mr-2 sm:mr-4"></i>
+                    Style Vision Board
+                </h3>
+                <div class="bg-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-10 border border-white/20">
+                    <div class="prose prose-invert max-w-none text-base sm:text-lg leading-relaxed">
+                        {% set moodboard_sections = recommendations.moodboard.split('\n\n') %}
+                        {% for section in moodboard_sections %}
+                            {% if section.strip() %}
+                                <div class="mb-6 sm:mb-8 last:mb-0">
+                                    {% set lines = section.split('\n') %}
+                                    {% for line in lines %}
+                                        {% if line.strip() %}
+                                            {% if line.strip().isupper() or line.strip().endswith(':') %}
+                                                <h4 class="text-xl sm:text-2xl font-bold text-pink-400 mb-3 sm:mb-4">{{ line.strip() }}</h4>
+                                            {% else %}
+                                                <p class="text-white/90 mb-2 sm:mb-3 text-base sm:text-lg">{{ line.strip() }}</p>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- AI Stylist Chat -->
-        <div class="glass-effect rounded-3xl p-10 border border-white/10 mb-16 card-hover">
-            <h3 class="text-3xl font-bold text-white mb-8">
-                <i class="fas fa-comments text-purple-400 mr-3"></i>
-                Ask Your AI Stylist
-            </h3>
-            <p class="text-white/70 text-lg mb-8">Have questions about your style? Want suggestions for specific occasions? Chat with your AI stylist!</p>
-            
-            <div class="space-y-6">
-                <!-- Chat Input -->
-                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                    <input 
-                        type="text" 
-                        id="chat-input" 
-                        placeholder="E.g., 'What shoes would work with this?' or 'Berlin rave outfit ideas?'"
-                        class="flex-1 px-6 py-4 bg-white/5 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm text-lg"
-                        onkeypress="if(event.key==='Enter') sendChat('{{ request_id }}')"
-                    >
-                    <button 
-                        onclick="sendChat('{{ request_id }}')" 
-                        class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105 animate-glow text-lg"
-                    >
-                        <i class="fas fa-paper-plane mr-2"></i>
-                        Send
-                    </button>
-                </div>
-                
-                <!-- Chat Output -->
-                <div id="chat-output" class="hidden">
-                    <div class="bg-purple-600/20 border-l-4 border-purple-500 p-6 rounded-2xl">
-                        <div class="flex items-start space-x-4">
-                            <i class="fas fa-robot text-purple-400 text-2xl mt-1 flex-shrink-0"></i>
-                            <div class="flex-1 min-w-0">
-                                <p class="font-semibold text-white mb-2 text-lg">Your AI Stylist</p>
-                                <p id="chat-response" class="text-white/90 text-lg"></p>
+            <!-- Sustainable Shopping Options -->
+            <div class="glass-effect rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 mb-8 sm:mb-12 border border-white/10 card-hover">
+                <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 sm:mb-8 text-center">
+                    <i class="fas fa-leaf text-green-400 mr-2 sm:mr-4"></i>
+                    Sustainable Shopping Options
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <a href="https://www.etsy.com" target="_blank" class="bg-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20 hover:border-green-500/50 transition-all duration-300 group hover:scale-105">
+                        <div class="flex items-center">
+                            <i class="fas fa-shopping-bag text-green-400 text-2xl sm:text-3xl mr-3 sm:mr-4 group-hover:scale-110 transition-transform"></i>
+                            <div>
+                                <h4 class="font-bold text-lg sm:text-xl text-white">Etsy</h4>
+                                <p class="text-white/70 text-sm sm:text-lg">Handmade & Vintage Finds</p>
                             </div>
                         </div>
-                    </div>
+                    </a>
+                    <a href="https://www.thredup.com" target="_blank" class="bg-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20 hover:border-green-500/50 transition-all duration-300 group hover:scale-105">
+                        <div class="flex items-center">
+                            <i class="fas fa-recycle text-green-400 text-2xl sm:text-3xl mr-3 sm:mr-4 group-hover:scale-110 transition-transform"></i>
+                            <div>
+                                <h4 class="font-bold text-lg sm:text-xl text-white">ThredUP</h4>
+                                <p class="text-white/70 text-sm sm:text-lg">Secondhand Fashion</p>
+                            </div>
+                        </div>
+                    </a>
+                    <a href="https://www.cosstores.com" target="_blank" class="bg-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20 hover:border-green-500/50 transition-all duration-300 group hover:scale-105">
+                        <div class="flex items-center">
+                            <i class="fas fa-star text-green-400 text-2xl sm:text-3xl mr-3 sm:mr-4 group-hover:scale-110 transition-transform"></i>
+                            <div>
+                                <h4 class="font-bold text-lg sm:text-xl text-white">COS</h4>
+                                <p class="text-white/70 text-sm sm:text-lg">Sustainable Luxury</p>
+                            </div>
+                        </div>
+                    </a>
+                    <a href="https://www.depop.com" target="_blank" class="bg-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20 hover:border-green-500/50 transition-all duration-300 group hover:scale-105">
+                        <div class="flex items-center">
+                            <i class="fas fa-users text-green-400 text-2xl sm:text-3xl mr-3 sm:mr-4 group-hover:scale-110 transition-transform"></i>
+                            <div>
+                                <h4 class="font-bold text-lg sm:text-xl text-white">Depop</h4>
+                                <p class="text-white/70 text-sm sm:text-lg">Community Fashion</p>
+                            </div>
+                        </div>
+                    </a>
                 </div>
-                
-                <!-- Welcome Message -->
-                <div id="chat-welcome" class="bg-blue-600/20 border-l-4 border-blue-500 p-6 rounded-2xl">
-                    <div class="flex items-start space-x-4">
-                        <i class="fas fa-robot text-blue-400 text-2xl mt-1"></i>
-                        <div>
-                            <p class="font-semibold text-white mb-2 text-lg">Your AI Stylist</p>
-                            <p class="text-white/90 text-lg">Hi! I'm here to help you explore your unique style identity. Ask me about accessories, makeup, sustainable options, or any fashion questions you have!</p>
+            </div>
+
+            <!-- Share Section -->
+            <div class="glass-effect rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 mb-8 sm:mb-12 border border-white/10 card-hover">
+                <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 sm:mb-8 text-center">
+                    <i class="fas fa-share-alt text-purple-400 mr-2 sm:mr-4"></i>
+                    Share Your Vibe
+                </h3>
+                <div class="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
+                    <button onclick="shareStyle('{{ recommendations.aesthetic_name }}', '{{ url_for('index', _external=True) }}')" 
+                            class="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-share mr-2 sm:mr-3"></i>Quick Share
+                    </button>
+                    <button onclick="copyLink('{{ url_for('index', _external=True) }}')" 
+                            class="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all duration-300 hover:scale-105 border border-white/20">
+                        <i class="fas fa-link mr-2 sm:mr-3"></i>Copy Link
+                    </button>
+                </div>
+            </div>
+
+            <!-- Feedback Section -->
+            <div class="glass-effect rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 mb-8 sm:mb-12 border border-white/10 card-hover">
+                <h3 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 sm:mb-8 text-center">
+                    <i class="fas fa-star text-yellow-400 mr-2 sm:mr-4"></i>
+                    Rate Your Style Identity
+                </h3>
+                <form id="rating-form" class="space-y-6 sm:space-y-8">
+                    <div class="text-center">
+                        <label class="block text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-white">How do you like your style recommendations? (1-5)</label>
+                        <div class="flex justify-center space-x-2 sm:space-x-4">
+                            {% for i in range(1, 6) %}
+                                <input type="radio" id="rating-{{ i }}" name="rating" value="{{ i }}" class="hidden">
+                                <label for="rating-{{ i }}" class="cursor-pointer text-4xl sm:text-5xl text-gray-400 hover:text-yellow-400 transition-all duration-300 rating-star hover:scale-125" data-rating="{{ i }}">
+                                    <i class="fas fa-star"></i>
+                                </label>
+                            {% endfor %}
                         </div>
                     </div>
-                </div>
-                
-                <!-- Loading State -->
-                <div id="chat-loading" class="hidden">
-                    <div class="bg-white/5 border border-white/20 p-6 rounded-2xl">
-                        <div class="flex items-center space-x-4">
-                            <div class="animate-spin rounded-full h-6 w-6 border-2 border-purple-600 border-t-transparent"></div>
-                            <p class="text-white/70 text-lg">Your stylist is thinking...</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Quick Questions -->
-                <div class="flex flex-wrap gap-3">
-                    <button onclick="quickChat('What accessories would complete this look?', '{{ request_id }}')" 
-                            class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 text-base">
-                        Accessories?
-                    </button>
-                    <button onclick="quickChat('What makeup would match this aesthetic?', '{{ request_id }}')" 
-                            class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 text-base">
-                        Makeup ideas?
-                    </button>
-                    <button onclick="quickChat('How can I make this more sustainable?', '{{ request_id }}')" 
-                            class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 text-base">
-                        Sustainable options?
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Social Media Integration -->
-        <div class="glass-effect rounded-3xl p-10 border border-white/10 mb-16 card-hover">
-            <h3 class="text-3xl font-bold text-white mb-8">
-                <i class="fas fa-share-alt text-purple-400 mr-3"></i>
-                Share Your Vibe
-            </h3>
-            <p class="text-white/70 text-lg mb-8">Show off your unique aesthetic identity with your friends!</p>
-            
-            <div class="flex flex-col sm:flex-row gap-6">
-                <button onclick="shareToInstagram('{{ recommendations.aesthetic_name }}')" 
-                        class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 animate-glow flex items-center justify-center text-lg">
-                    <i class="fab fa-instagram mr-3 text-2xl"></i>
-                    Share on Instagram
-                </button>
-                <button onclick="copyStyleURL()" 
-                        class="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center text-lg">
-                    <i class="fas fa-link mr-3"></i>
-                    Copy Link
-                </button>
-            </div>
-            
-            <!-- Share preview -->
-            <div id="share-preview" class="mt-6 hidden">
-                <div class="bg-white/5 border border-white/20 p-6 rounded-2xl">
-                    <p class="text-white/60 text-base mb-3">Share text preview:</p>
-                    <p id="share-text" class="text-white font-medium text-lg break-words"></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- User Feedback Section -->
-        <div class="glass-effect rounded-3xl p-10 border border-white/10 mb-16 card-hover">
-            <h3 class="text-3xl font-bold text-white mb-8">
-                <i class="fas fa-star text-purple-400 mr-3"></i>
-                Rate Your Style Identity
-            </h3>
-            <form id="feedback-form" class="space-y-6">
-                <input type="hidden" id="request-id" value="{{ request_id }}">
-                
-                <!-- Star Rating -->
-                <div>
-                    <label class="block text-lg font-medium text-white mb-4">How do you like your style recommendations?</label>
-                    <div class="flex space-x-2" id="star-rating">
-                        <button type="button" class="star-btn text-3xl text-white/30 hover:text-yellow-400 transition-all duration-300 hover:scale-110" data-rating="1">
-                            <i class="fas fa-star"></i>
-                        </button>
-                        <button type="button" class="star-btn text-3xl text-white/30 hover:text-yellow-400 transition-all duration-300 hover:scale-110" data-rating="2">
-                            <i class="fas fa-star"></i>
-                        </button>
-                        <button type="button" class="star-btn text-3xl text-white/30 hover:text-yellow-400 transition-all duration-300 hover:scale-110" data-rating="3">
-                            <i class="fas fa-star"></i>
-                        </button>
-                        <button type="button" class="star-btn text-3xl text-white/30 hover:text-yellow-400 transition-all duration-300 hover:scale-110" data-rating="4">
-                            <i class="fas fa-star"></i>
-                        </button>
-                        <button type="button" class="star-btn text-3xl text-white/30 hover:text-yellow-400 transition-all duration-300 hover:scale-110" data-rating="5">
-                            <i class="fas fa-star"></i>
-                        </button>
-                    </div>
-                    <input type="hidden" id="rating-value" name="rating" value="">
-                </div>
-                
-                <!-- Optional Comment -->
-                <div>
-                    <label for="feedback-text" class="block text-lg font-medium text-white mb-4">
-                        Any thoughts to share? (Optional)
-                    </label>
-                    <textarea 
-                        id="feedback-text" 
-                        name="feedback" 
-                        rows="4" 
-                        class="w-full px-6 py-4 bg-white/5 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm text-lg"
-                        placeholder="Tell us what you loved or how we could improve..."
-                    ></textarea>
-                </div>
-                
-                <button 
-                    type="submit" 
-                    id="feedback-submit"
-                    class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 animate-glow disabled:opacity-50 text-lg"
-                    disabled
-                >
-                    <i class="fas fa-heart mr-3"></i>
-                    Submit Feedback
-                </button>
-            </form>
-            
-            <div id="feedback-response" class="mt-6 hidden">
-                <div class="bg-green-600/20 border-l-4 border-green-500 p-6 rounded-2xl">
-                    <p class="text-white font-semibold text-lg">
-                        <i class="fas fa-check-circle mr-3"></i>
-                        Thank you for your feedback!
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        {% else %}
-        <!-- Error state -->
-        <div class="glass-effect rounded-3xl p-12 border border-red-500/30 text-center">
-            <div class="w-24 h-24 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center mx-auto mb-8 animate-glow">
-                <i class="fas fa-exclamation-triangle text-white text-4xl"></i>
-            </div>
-            <h2 class="text-3xl font-bold text-white mb-6">Unable to Generate Recommendations</h2>
-            <p class="text-white/70 text-xl mb-8">{{ recommendations.error or "An unexpected error occurred while processing your cultural preferences." }}</p>
-            <a href="{{ url_for('index') }}" class="bg-gradient-to-r from-red-600 to-red-800 text-white px-8 py-4 rounded-2xl font-semibold hover:from-red-700 hover:to-red-900 transition-all duration-300 hover:scale-105 animate-glow text-lg">
-                <i class="fas fa-redo mr-3"></i>
-                Try Again
-            </a>
-        </div>
-        {% endif %}
-
-        <!-- Debug information (only shown in development) -->
-        {% if config.DEBUG %}
-        <div class="mt-16 glass-effect rounded-3xl p-8 border border-white/10">
-            <h4 class="font-semibold text-white mb-4 text-lg">Debug Information</h4>
-            <details class="text-base">
-                <summary class="cursor-pointer text-white/70 hover:text-white">View API Responses</summary>
-                <div class="mt-4 space-y-4">
                     <div>
-                        <strong class="text-white">Qloo Data:</strong>
-                        <pre class="bg-white/5 p-4 rounded-2xl text-sm overflow-auto max-h-60 text-white/80">{{ qloo_data | tojson(indent=2) }}</pre>
+                        <label for="feedback" class="block text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-white">Any thoughts to share? (Optional)</label>
+                        <textarea id="feedback" name="feedback" rows="4" 
+                                  class="w-full bg-white/10 border border-white/20 rounded-xl sm:rounded-2xl px-4 sm:px-6 py-3 sm:py-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base sm:text-lg"
+                                  placeholder="Tell us what you loved or how we could improve..."></textarea>
                     </div>
-                    <div>
-                        <strong class="text-white">Gemini Recommendations:</strong>
-                        <pre class="bg-white/5 p-4 rounded-2xl text-sm overflow-auto max-h-60 text-white/80">{{ recommendations | tojson(indent=2) }}</pre>
+                    <div class="text-center">
+                        <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105">
+                            <i class="fas fa-paper-plane mr-2 sm:mr-3"></i>Submit Feedback
+                        </button>
                     </div>
-                </div>
-            </details>
-        </div>
+                </form>
+            </div>
         {% endif %}
     </div>
 </section>
 
-<!-- JavaScript Functions -->
 <script>
-// Star rating functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const stars = document.querySelectorAll('.star-btn');
-    const ratingInput = document.getElementById('rating-value');
-    const submitBtn = document.getElementById('feedback-submit');
-    
-    stars.forEach((star, index) => {
-        star.addEventListener('click', function() {
-            const rating = parseInt(this.dataset.rating);
-            ratingInput.value = rating;
-            
-            // Update visual state
-            stars.forEach((s, i) => {
-                if (i < rating) {
-                    s.classList.remove('text-white/30');
-                    s.classList.add('text-yellow-400');
-                } else {
-                    s.classList.remove('text-yellow-400');
-                    s.classList.add('text-white/30');
-                }
+    // Share functionality
+    function shareStyle(aestheticName, url) {
+        if (navigator.share) {
+            navigator.share({
+                title: `My ${aestheticName} Style on Mimesis`,
+                text: `Check out my ${aestheticName} style!`,
+                url: url
+            }).then(() => console.log("Shared successfully")).catch(error => console.log("Error sharing:", error));
+        } else {
+            // Fallback for browsers that don't support Web Share API
+            const shareText = `Check out my ${aestheticName} style! ${url}`;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert("Share text copied to clipboard!");
+                }).catch(() => {
+                    prompt("Copy this link to share:", shareText);
+                });
+            } else {
+                prompt("Copy this link to share:", shareText);
+            }
+        }
+    }
+
+    function copyLink(url) {
+        navigator.clipboard.writeText(url).then(() => {
+            // Show a more mobile-friendly notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg z-50 text-sm sm:text-base';
+            notification.textContent = 'Link copied to clipboard!';
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 2000);
+        }).catch(() => {
+            prompt("Copy this link manually:", url);
+        });
+    }
+
+    // Rating stars functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const ratingStars = document.querySelectorAll('.rating-star');
+        
+        ratingStars.forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.dataset.rating);
+                
+                // Update radio button
+                document.getElementById(`rating-${rating}`).checked = true;
+                
+                // Update star display
+                ratingStars.forEach((s, index) => {
+                    if (index < rating) {
+                        s.classList.remove('text-gray-400');
+                        s.classList.add('text-yellow-400');
+                    } else {
+                        s.classList.remove('text-yellow-400');
+                        s.classList.add('text-gray-400');
+                    }
+                });
             });
-            
-            // Enable submit button
-            submitBtn.disabled = false;
         });
     });
-    
-    // Handle form submission
-    document.getElementById('feedback-form').addEventListener('submit', function(e) {
+
+    // Feedback form submission
+    document.getElementById("rating-form").addEventListener("submit", function(e) {
         e.preventDefault();
+        const rating = document.querySelector('input[name="rating"]:checked')?.value;
+        const feedback = document.getElementById("feedback").value;
         
+        if (!rating) {
+            // Show mobile-friendly alert
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg z-50 text-sm sm:text-base';
+            notification.textContent = 'Please select a rating.';
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+            return;
+        }
+        
+        // Send feedback to server
         const formData = new FormData();
-        formData.append('request_id', document.getElementById('request-id').value);
-        formData.append('rating', ratingInput.value);
-        formData.append('feedback', document.getElementById('feedback-text').value);
+        formData.append('request_id', '{{ request_id }}');
+        formData.append('rating', rating);
+        formData.append('feedback', feedback);
         
         fetch('/feedback', {
             method: 'POST',
@@ -454,143 +369,57 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'success') {
-                document.getElementById('feedback-form').style.display = 'none';
-                document.getElementById('feedback-response').classList.remove('hidden');
+            if (data.success) {
+                // Show success notification
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg z-50 text-sm sm:text-base';
+                notification.textContent = 'Thank you for your feedback!';
+                document.body.appendChild(notification);
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+                
+                // Reset form
+                document.getElementById("rating-form").reset();
+                document.querySelectorAll('.rating-star').forEach(star => {
+                    star.classList.remove('text-yellow-400');
+                    star.classList.add('text-gray-400');
+                });
             } else {
-                alert('Error submitting feedback: ' + (data.error || 'Unknown error'));
+                // Show error notification
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg z-50 text-sm sm:text-base';
+                notification.textContent = 'Failed to submit feedback. Please try again.';
+                document.body.appendChild(notification);
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
             }
         })
         .catch(error => {
-            alert('Error submitting feedback: ' + error.message);
+            console.error('Error:', error);
+            // Show error notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg z-50 text-sm sm:text-base';
+            notification.textContent = 'Network error. Please try again.';
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         });
     });
-});
 
-// Enhanced Chat functionality
-async function sendChat(styleRequestId) {
-    const input = document.getElementById('chat-input');
-    const output = document.getElementById('chat-output');
-    const loading = document.getElementById('chat-loading');
-    const response = document.getElementById('chat-response');
+    // Add touch support for better mobile experience
+    document.addEventListener('touchstart', function() {}, {passive: true});
     
-    const message = input.value.trim();
-    if (!message) {
-        alert('Please enter a message.');
-        return;
-    }
-    
-    // Show loading state
-    output.classList.add('hidden');
-    loading.classList.remove('hidden');
-    
-    try {
-        const formData = new FormData();
-        formData.append('chat_input', message);
-        formData.append('style_request_id', styleRequestId);
-        
-        const chatResponse = await fetch('/chat', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await chatResponse.json();
-        
-        // Hide loading state
-        loading.classList.add('hidden');
-        
-        if (data.status === 'success') {
-            response.textContent = data.response;
-            output.classList.remove('hidden');
-            document.getElementById('chat-welcome').classList.add('hidden');
-            input.value = ''; // Clear input
-        } else {
-            // Show error in the chat response area instead of alert
-            response.textContent = data.error || 'I\'m having trouble responding right now. Please try again!';
-            output.classList.remove('hidden');
-            document.getElementById('chat-welcome').classList.add('hidden');
+    // Prevent zoom on double tap for mobile
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
         }
-    } catch (error) {
-        loading.classList.add('hidden');
-        // Show error in the chat response area instead of alert
-        response.textContent = 'I\'m having trouble responding right now. Please try again!';
-        output.classList.remove('hidden');
-        document.getElementById('chat-welcome').classList.add('hidden');
-    }
-}
-
-// Quick chat function
-function quickChat(message, styleRequestId) {
-    document.getElementById('chat-input').value = message;
-    sendChat(styleRequestId);
-}
-
-// Instagram Sharing Integration
-function shareToInstagram(aestheticName) {
-    const shareText = `Just discovered my aesthetic identity: ${aestheticName}! ✨\n\nFind your unique style vibe with Mimesis - the cultural style intelligence engine that understands your cultural DNA.\n\n#MimesisStyle #AestheticIdentity #StyleAI #CulturalFashion #PersonalStyle #AestheticVibes #FashionTech #AIStyler`;
-    
-    // Show preview
-    const preview = document.getElementById('share-preview');
-    const previewText = document.getElementById('share-text');
-    previewText.textContent = shareText;
-    preview.classList.remove('hidden');
-    
-    // Try to open Instagram with pre-filled content
-    try {
-        // Create Instagram sharing URL (this will redirect to Instagram app or web)
-        const instagramUrl = `https://www.instagram.com/?text=${encodeURIComponent(shareText)}`;
-        
-        // Show user instructions
-        setTimeout(() => {
-            const message = `📱 Instagram Sharing Ready!\n\n"${shareText}"\n\nInstructions:\n1. Instagram will open in a new tab\n2. Copy the text above\n3. Create a new post or story\n4. Paste the text and add your style photos\n5. Share your aesthetic identity!`;
-            
-            if (confirm(message + '\n\nClick OK to open Instagram, or Cancel to just copy the text.')) {
-                window.open(instagramUrl, '_blank');
-            } else {
-                // Copy text to clipboard
-                navigator.clipboard.writeText(shareText).then(() => {
-                    alert('Share text copied to clipboard! You can now paste it in Instagram.');
-                }).catch(() => {
-                    alert('Share text ready! Please copy manually:\n\n' + shareText);
-                });
-            }
-        }, 500);
-        
-    } catch (error) {
-        // Fallback: just copy to clipboard
-        navigator.clipboard.writeText(shareText).then(() => {
-            alert('Share text copied to clipboard! Open Instagram and paste it in your post.');
-        }).catch(() => {
-            alert('Share text ready! Please copy manually:\n\n' + shareText);
-        });
-    }
-}
-
-// Copy style URL
-function copyStyleURL() {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
-        const preview = document.getElementById('share-preview');
-        const previewText = document.getElementById('share-text');
-        previewText.textContent = `Style URL copied! ${url}`;
-        preview.classList.remove('hidden');
-        
-        setTimeout(() => {
-            preview.classList.add('hidden');
-        }, 3000);
-    }).catch(() => {
-        alert('Could not copy URL. Please copy manually: ' + url);
-    });
-}
-
-// Focus management for accessibility
-document.addEventListener('DOMContentLoaded', () => {
-    // Announce the aesthetic name to screen readers
-    const aestheticName = document.querySelector('h1');
-    if (aestheticName) {
-        aestheticName.setAttribute('aria-live', 'polite');
-        aestheticName.setAttribute('aria-label', `Your aesthetic identity is ${aestheticName.textContent}`);
-    }
-});
+        lastTouchEnd = now;
+    }, false);
 </script>
 {% endblock %}

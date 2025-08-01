@@ -1,14 +1,56 @@
 import json
 import logging
 import os
-from typing import Dict, Any
+from typing import Dict, Any, List
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
 import re
 
-# Initialize Gemini client
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyA2JL7kXFhurNWZqh__DHRghXFxUiEtW-0"))
+def format_sentences_with_breaks(text: str) -> str:
+    """Format text to ensure each sentence starts on a new line after a full stop"""
+    # Split text into sections
+    sections = text.split('\n\n')
+    formatted_sections = []
+    
+    for section in sections:
+        if section.strip():
+            # Split into lines
+            lines = section.split('\n')
+            formatted_lines = []
+            
+            for line in lines:
+                if line.strip() and not line.strip().isupper():  # Not a header
+                    # Split sentences and add line breaks
+                    sentences = re.split(r'(?<=[.!?])\s+', line)
+                    formatted_sentences = []
+                    for sentence in sentences:
+                        if sentence.strip():
+                            formatted_sentences.append(sentence.strip())
+                    
+                    if formatted_sentences:
+                        formatted_lines.append('\n'.join(formatted_sentences))
+                else:
+                    formatted_lines.append(line)
+            
+            formatted_sections.append('\n'.join(formatted_lines))
+    
+    return '\n\n'.join(formatted_sections)
+
+# Initialize Gemini client lazily to avoid SSL issues
+client = None
+
+def get_gemini_client():
+    """Get Gemini client with lazy initialization"""
+    global client
+    if client is None:
+        try:
+            client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyA2JL7kXFhurNWZqh__DHRghXFxUiEtW-0"))
+        except Exception as e:
+            logging.error(f"Failed to initialize Gemini client: {e}")
+            # Return None if client initialization fails
+            return None
+    return client
 
 class StyleRecommendations(BaseModel):
     aesthetic_name: str
@@ -17,116 +59,640 @@ class StyleRecommendations(BaseModel):
     moodboard: str
 
 def extract_largest_json(text):
-    # Find all JSON objects in the text
-    matches = list(re.finditer(r'\{(?:[^{}]|(?R))*\}', text, re.DOTALL))
-    for match in reversed(matches):  # Try largest/last match first
+    """Extract the largest JSON object from text, with improved error handling."""
+    if not text:
+        return None
+    
+    logging.info(f"Attempting to extract JSON from text of length: {len(text)}")
+    logging.info(f"Text starts with: {text[:100]}...")
+    
+    # First, try to extract JSON from markdown code blocks
+    markdown_patterns = [
+        r'```json\s*(\{.*?\})\s*```',  # JSON in markdown code blocks
+        r'```\s*(\{.*?\})\s*```',      # JSON in generic code blocks
+        r'`(\{.*?\})`',                # JSON in inline code
+    ]
+    
+    for i, pattern in enumerate(markdown_patterns):
         try:
-            return json.loads(match.group(0))
-        except Exception:
+            matches = re.finditer(pattern, text, re.DOTALL)
+            for match in matches:
+                json_str = match.group(1) if len(match.groups()) > 0 else match.group(0)
+                logging.info(f"Found JSON in markdown pattern {i}: {json_str[:100]}...")
+                try:
+                    parsed = json.loads(json_str)
+                    if isinstance(parsed, dict) and len(parsed) > 0:
+                        logging.info(f"Successfully parsed JSON from markdown pattern {i}")
+                        return parsed
+                except json.JSONDecodeError as e:
+                    logging.error(f"JSON decode error in markdown pattern {i}: {e}")
+                    continue
+        except Exception as e:
+            logging.error(f"Error in markdown pattern {i}: {e}")
             continue
-    # Try to fix common truncation (add closing braces)
-    open_braces = text.count('{')
-    close_braces = text.count('}')
-    if open_braces > close_braces:
-        fixed = text + '}' * (open_braces - close_braces)
+    
+    # If no markdown JSON found, try to find JSON objects with different patterns
+    json_patterns = [
+        r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}',  # Basic JSON object
+        r'\{.*?\}',  # Simple JSON object
+        r'\{[^}]*"aesthetic_name"[^}]*\}',  # JSON with aesthetic_name
+        r'\{[^}]*"brands"[^}]*\}',  # JSON with brands
+    ]
+    
+    largest_json = None
+    max_length = 0
+    
+    for i, pattern in enumerate(json_patterns):
         try:
-            return json.loads(fixed)
-        except Exception:
-            pass
-    return None
+            matches = re.finditer(pattern, text, re.DOTALL)
+            for match in matches:
+                json_str = match.group()
+                if len(json_str) > max_length:
+                    logging.info(f"Found potential JSON with pattern {i}: {json_str[:100]}...")
+                    try:
+                        # Try to parse as JSON
+                        parsed = json.loads(json_str)
+                        if isinstance(parsed, dict) and len(parsed) > 0:
+                            largest_json = parsed
+                            max_length = len(json_str)
+                            logging.info(f"Successfully parsed JSON with pattern {i}")
+                    except json.JSONDecodeError as e:
+                        logging.error(f"JSON decode error in pattern {i}: {e}")
+                        continue
+        except Exception as e:
+            logging.error(f"Error in JSON pattern {i}: {e}")
+            continue
+    
+    # If no JSON found, try to extract from the entire text
+    if largest_json is None:
+        try:
+            # Try to parse the entire text as JSON
+            parsed = json.loads(text.strip())
+            if isinstance(parsed, dict):
+                logging.info("Successfully parsed entire text as JSON")
+                largest_json = parsed
+        except json.JSONDecodeError as e:
+            logging.error(f"Failed to parse entire text as JSON: {e}")
+    
+    if largest_json:
+        logging.info(f"Successfully extracted JSON with {len(largest_json)} fields")
+    else:
+        logging.error("Failed to extract any JSON from the text")
+    
+    return largest_json
 
 def generate_style_recommendations(cultural_input: str, qloo_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Use Gemini API to generate aesthetic names, brands, outfits, and moodboards
+    Use Gemini API to generate highly personalized aesthetic names, brands, outfits, and moodboards
+    based on specific cultural inputs and Qloo insights
     """
     try:
-        # Prepare context from Qloo data
-        archetypes_context = ""
-        if qloo_data.get("success") and qloo_data.get("archetypes"):
-            archetypes_context = f"Fashion archetypes identified: {', '.join(qloo_data['archetypes'])}"
-        elif qloo_data.get("fallback"):
-            archetypes_context = "Cultural fusion aesthetic with global influences"
-        else:
-            archetypes_context = "Personal cultural style identity"
+        # Enhanced cultural analysis from user input
+        cultural_elements = analyze_cultural_input(cultural_input)
         
-        system_prompt = """You are Mimesis, an expert cultural style intelligence engine. Your role is to translate cultural preferences into unique, inclusive fashion aesthetics.
-
-Key principles:
-- Focus on cultural identity, not body type or income
-- Provide recommendations across all budgets (luxury, indie, thrift, DIY)
-- Include global and diverse brand suggestions
-- Emphasize sustainability and inclusivity
-- Create vivid, creative aesthetic names
-
-IMPORTANT: Brand recommendations must be highly personalized and diverse based on the cultural input. Consider:
-- Cultural heritage and regional fashion influences
-- Mix of luxury, contemporary, vintage, and sustainable brands
-- Global diversity (not just Western brands)
-- Instagram boutiques and independent designers
-- Cultural fusion and cross-cultural influences
-
-Respond with a JSON object containing:
-- aesthetic_name: A unique, creative style identity that reflects the cultural input (e.g., "Vintage Tamil Cinematic Maestro", "Cyberpunk Zen Minimalist")
-- brands: Array of 6 highly personalized brand suggestions that directly relate to the cultural input. Mix luxury, indie, thrift, and DIY options from diverse global markets. MUST include at least 1 Instagram boutique handle (e.g., @DesiCraftStudio, @TokyoStreetFashion, @BerlinVintageFinds). Brands should reflect the specific cultural themes identified.
-- outfit: Detailed outfit description with specific pieces, colors, styling, and cultural context. Include layering suggestions, accessories, and how each element connects to the cultural influences.
-- moodboard: Rich, evocative description of the aesthetic world. Include specific colors, textures, architectural elements, cultural motifs, lighting, atmosphere, and visual themes. Make it vivid enough that someone could use this description to create a moodboard or find inspiration. Include cultural references, historical periods, artistic movements, and sensory details."""
-
-        user_prompt = f"""Cultural preferences: {cultural_input}
-
-{archetypes_context}
-
-Generate highly personalized fashion recommendations that capture the essence of these cultural influences. 
-
-CRITICAL: The brand recommendations must be specifically tailored to the cultural input provided. Analyze the cultural elements and suggest brands that directly relate to those influences. For example:
-- If Indian/Bollywood elements are mentioned, include Indian designers and South Asian fashion brands
-- If Japanese/Korean elements are mentioned, include Asian fashion brands and streetwear
-- If vintage/retro elements are mentioned, include vintage and heritage brands
-- If cyberpunk/futuristic elements are mentioned, include avant-garde and tech fashion brands
-
-Be creative, inclusive, and consider sustainability. Ensure brand diversity and global representation. If no specific archetypes are provided, create a unique aesthetic based on the cultural input."""
-
+        # Prepare detailed context from Qloo data
+        qloo_context = create_detailed_qloo_context(qloo_data, cultural_elements)
+        
+        # Create focused personalized prompt
+        personalized_prompt = create_personalized_prompt(cultural_input, cultural_elements, qloo_context)
+        
+        logging.info(f"Generated personalized prompt for cultural input: {cultural_input}")
+        
+        # Use Gemini to generate personalized recommendations
+        client = get_gemini_client()
+        if client is None:
+            return generate_fallback_recommendations(cultural_input, qloo_data)
+        
         response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=[
-                types.Content(role="user", parts=[types.Part(text=user_prompt)])
-            ],
+            contents=[types.Content(role="user", parts=[types.Part(text=personalized_prompt)])],
             config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                response_mime_type="application/json",
-                response_schema=StyleRecommendations,
-                temperature=0.8,  # Higher creativity
-                max_output_tokens=2048
+                temperature=0.7,
+                max_output_tokens=4000  # Increased token limit
             ),
         )
-
-        raw_json = response.text
-        logging.info(f"Gemini raw response: {raw_json}")
-
-        if raw_json:
-            try:
-                data = extract_largest_json(raw_json)
-                if data:
-                    return {
-                        "success": True,
-                        "aesthetic_name": data.get("aesthetic_name", "Unique Cultural Aesthetic"),
-                        "brands": data.get("brands", []),
-                        "outfit": data.get("outfit", "Custom outfit based on your cultural vibe"),
-                        "moodboard": data.get("moodboard", "Personalized moodboard reflecting your cultural style"),
-                        "raw_response": data
-                    }
+        
+        if response.text:
+            logging.info(f"Gemini response received: {len(response.text)} characters")
+            logging.info(f"Response preview: {response.text[:200]}...")
+            
+            # Extract JSON response
+            json_data = extract_largest_json(response.text)
+            if json_data:
+                # Validate the response structure
+                required_fields = ["aesthetic_name", "brands", "outfit", "moodboard"]
+                if all(field in json_data for field in required_fields):
+                    # Validate and enhance the response
+                    validated_response = validate_and_enhance_response(json_data, cultural_elements)
+                    logging.info(f"Generated personalized recommendations: {validated_response.get('aesthetic_name')}")
+                    return validated_response
                 else:
-                    logging.error(f"Failed to extract valid JSON from Gemini response. Raw: {raw_json}")
+                    logging.error(f"Missing required fields in JSON response: {list(json_data.keys())}")
+                    logging.error(f"Available fields: {json_data}")
                     return generate_fallback_recommendations(cultural_input, qloo_data)
-            except Exception as e:
-                logging.error(f"Failed to robustly parse Gemini JSON response: {e}\nRaw: {raw_json}")
+            else:
+                logging.error("Failed to extract JSON from Gemini response")
+                logging.error(f"Full response text: {response.text}")
                 return generate_fallback_recommendations(cultural_input, qloo_data)
         else:
-            logging.warning("Empty response from Gemini, using fallback")
+            logging.error("Empty response from Gemini")
             return generate_fallback_recommendations(cultural_input, qloo_data)
-
+            
     except Exception as e:
-        logging.error(f"Gemini API error: {str(e)}")
+        logging.error(f"Error in generate_style_recommendations: {str(e)}")
         return generate_fallback_recommendations(cultural_input, qloo_data)
+
+def analyze_cultural_input(cultural_input: str) -> Dict[str, Any]:
+    """
+    Analyze cultural input to extract specific themes, elements, and preferences
+    """
+    elements = [elem.strip().lower() for elem in cultural_input.split(',') if elem.strip()]
+    
+    analysis = {
+        "raw_elements": elements,
+        "themes": [],
+        "categories": {
+            "music": [],
+            "film": [],
+            "art": [],
+            "culture": [],
+            "lifestyle": [],
+            "fashion": [],
+            "instruments": [],
+            "games": [],
+            "eras": []
+        },
+        "cultural_regions": [],
+        "aesthetic_preferences": [],
+        "style_keywords": [],
+        "specific_elements": {},
+        "color_themes": [],
+        "fabric_preferences": [],
+        "cultural_significance": []
+    }
+    
+    # Enhanced cultural mappings with specific details
+    music_artists = {
+        "ar rahman": {
+            "style": "sophisticated_fusion",
+            "colors": ["deep reds", "gold", "navy", "cream"],
+            "fabrics": ["silk", "cotton", "linen", "embroidery"],
+            "significance": "classical Indian music fusion with contemporary elements"
+        },
+        "a.r. rahman": {
+            "style": "sophisticated_fusion", 
+            "colors": ["deep reds", "gold", "navy", "cream"],
+            "fabrics": ["silk", "cotton", "linen", "embroidery"],
+            "significance": "classical Indian music fusion with contemporary elements"
+        },
+        "sza": {
+            "style": "contemporary_rnb",
+            "colors": ["blacks", "whites", "neutrals", "pastels"],
+            "fabrics": ["silk", "satin", "leather", "denim"],
+            "significance": "urban contemporary R&B with modern femininity"
+        }
+    }
+    
+    films = {
+        "radhe shyam": {
+            "style": "period_drama",
+            "colors": ["rich jewel tones", "gold", "deep purples"],
+            "fabrics": ["velvet", "silk", "embroidery", "traditional textiles"],
+            "significance": "period drama with traditional Indian aesthetics"
+        },
+        "blade runner": {
+            "style": "cyberpunk_noir",
+            "colors": ["neon colors", "blacks", "grays", "electric blues"],
+            "fabrics": ["leather", "vinyl", "metallic", "synthetic"],
+            "significance": "futuristic urban dystopia with noir elements"
+        },
+        "matrix": {
+            "style": "cyberpunk_tech",
+            "colors": ["blacks", "greens", "silvers", "dark grays"],
+            "fabrics": ["leather", "vinyl", "tech fabrics", "synthetic"],
+            "significance": "technological dystopia with sleek aesthetics"
+        }
+    }
+    
+    cultural_styles = {
+        "vintage": {
+            "style": "timeless_elegance",
+            "colors": ["earth tones", "pastels", "jewel tones", "neutrals"],
+            "fabrics": ["wool", "silk", "cotton", "tweed"],
+            "significance": "classic sophistication with retro charm"
+        },
+        "zen": {
+            "style": "minimalist_philosophy",
+            "colors": ["whites", "beiges", "grays", "earth tones"],
+            "fabrics": ["linen", "cotton", "natural fibers", "organic materials"],
+            "significance": "minimalist philosophy with natural materials"
+        },
+        "minimalist": {
+            "style": "clean_simplicity",
+            "colors": ["whites", "blacks", "grays", "neutrals"],
+            "fabrics": ["cotton", "linen", "simple textures"],
+            "significance": "clean, simple, and uncluttered style"
+        }
+    }
+    
+    instruments = {
+        "sitar": {
+            "style": "classical_indian",
+            "colors": ["deep browns", "gold", "cream", "sage"],
+            "fabrics": ["natural materials", "traditional textiles", "handcrafted fabrics"],
+            "significance": "classical Indian instrument with spiritual resonance"
+        }
+    }
+    
+    games = {
+        "chess": {
+            "style": "strategic_elegance",
+            "colors": ["blacks", "whites", "gold", "deep browns"],
+            "fabrics": ["wool", "silk", "structured fabrics"],
+            "significance": "strategic thinking with classic elegance"
+        }
+    }
+    
+    eras = {
+        "20s cinema": {
+            "style": "art_deco_glamour",
+            "colors": ["gold", "silver", "jewel tones", "metallics"],
+            "fabrics": ["silk", "velvet", "sequins", "luxury fabrics"],
+            "significance": "Art Deco glamour with cinematic sophistication"
+        },
+        "70s bollywood": {
+            "style": "retro_glamour",
+            "colors": ["bright colors", "gold", "silver", "vibrant hues"],
+            "fabrics": ["silk", "sequins", "velvet", "satin"],
+            "significance": "vintage Bollywood glamour with retro charm"
+        }
+    }
+    
+    for element in elements:
+        # Check specific mappings first
+        if element in music_artists:
+            analysis["categories"]["music"].append(element)
+            analysis["themes"].append("musical_influence")
+            analysis["specific_elements"][element] = music_artists[element]
+            analysis["color_themes"].extend(music_artists[element]["colors"])
+            analysis["fabric_preferences"].extend(music_artists[element]["fabrics"])
+            analysis["cultural_significance"].append(music_artists[element]["significance"])
+            
+        elif element in films:
+            analysis["categories"]["film"].append(element)
+            analysis["themes"].append("cinematic_aesthetic")
+            analysis["specific_elements"][element] = films[element]
+            analysis["color_themes"].extend(films[element]["colors"])
+            analysis["fabric_preferences"].extend(films[element]["fabrics"])
+            analysis["cultural_significance"].append(films[element]["significance"])
+            
+        elif element in cultural_styles:
+            analysis["categories"]["culture"].append(element)
+            analysis["themes"].append("cultural_style")
+            analysis["specific_elements"][element] = cultural_styles[element]
+            analysis["color_themes"].extend(cultural_styles[element]["colors"])
+            analysis["fabric_preferences"].extend(cultural_styles[element]["fabrics"])
+            analysis["cultural_significance"].append(cultural_styles[element]["significance"])
+            
+        elif element in instruments:
+            analysis["categories"]["instruments"].append(element)
+            analysis["themes"].append("musical_instrument")
+            analysis["specific_elements"][element] = instruments[element]
+            analysis["color_themes"].extend(instruments[element]["colors"])
+            analysis["fabric_preferences"].extend(instruments[element]["fabrics"])
+            analysis["cultural_significance"].append(instruments[element]["significance"])
+            
+        elif element in games:
+            analysis["categories"]["games"].append(element)
+            analysis["themes"].append("strategic_game")
+            analysis["specific_elements"][element] = games[element]
+            analysis["color_themes"].extend(games[element]["colors"])
+            analysis["fabric_preferences"].extend(games[element]["fabrics"])
+            analysis["cultural_significance"].append(games[element]["significance"])
+            
+        elif element in eras:
+            analysis["categories"]["eras"].append(element)
+            analysis["themes"].append("historical_era")
+            analysis["specific_elements"][element] = eras[element]
+            analysis["color_themes"].extend(eras[element]["colors"])
+            analysis["fabric_preferences"].extend(eras[element]["fabrics"])
+            analysis["cultural_significance"].append(eras[element]["significance"])
+        
+        # Extract cultural regions
+        if any(region in element for region in ["indian", "tamil", "hindi", "bollywood", "ar rahman", "radhe shyam"]):
+            analysis["cultural_regions"].append("south_asian")
+        elif any(region in element for region in ["japanese", "zen", "tokyo"]):
+            analysis["cultural_regions"].append("east_asian")
+        elif any(region in element for region in ["western", "american", "european", "blade runner", "matrix"]):
+            analysis["cultural_regions"].append("western")
+        
+        # Extract aesthetic preferences
+        if element in ["vintage", "retro", "classic", "20s cinema", "70s bollywood"]:
+            analysis["aesthetic_preferences"].append("timeless_elegance")
+        elif element in ["modern", "contemporary", "blade runner", "matrix"]:
+            analysis["aesthetic_preferences"].append("contemporary_style")
+        elif element in ["minimalist", "zen"]:
+            analysis["aesthetic_preferences"].append("minimalist_aesthetic")
+        elif element in ["ar rahman", "sitar"]:
+            analysis["aesthetic_preferences"].append("cultural_fusion")
+    
+    # Remove duplicates
+    analysis["themes"] = list(set(analysis["themes"]))
+    analysis["cultural_regions"] = list(set(analysis["cultural_regions"]))
+    analysis["aesthetic_preferences"] = list(set(analysis["aesthetic_preferences"]))
+    analysis["color_themes"] = list(set(analysis["color_themes"]))
+    analysis["fabric_preferences"] = list(set(analysis["fabric_preferences"]))
+    analysis["cultural_significance"] = list(set(analysis["cultural_significance"]))
+    
+    return analysis
+
+def create_detailed_qloo_context(qloo_data: Dict[str, Any], cultural_elements: Dict[str, Any]) -> str:
+    """
+    Create detailed context from Qloo data for personalization
+    """
+    context_parts = []
+    
+    if qloo_data.get("success") and qloo_data.get("archetypes"):
+        archetypes = qloo_data["archetypes"]
+        context_parts.append(f"FASHION ARCHETYPES: {', '.join(archetypes)}")
+        
+        # Add specific archetype analysis
+        for archetype in archetypes:
+            if "vintage" in archetype.lower():
+                context_parts.append("VINTAGE AESTHETIC: Classic, timeless elegance with retro influences")
+            elif "modern" in archetype.lower():
+                context_parts.append("MODERN AESTHETIC: Contemporary, clean lines with current trends")
+            elif "cultural" in archetype.lower():
+                context_parts.append("CULTURAL FUSION: Blend of traditional and contemporary elements")
+            elif "minimalist" in archetype.lower():
+                context_parts.append("MINIMALIST AESTHETIC: Clean, simple, and uncluttered style")
+    
+    if qloo_data.get("entities_processed"):
+        entities = qloo_data["entities_processed"]
+        context_parts.append(f"PROCESSED ENTITIES: {', '.join(entities)}")
+    
+    # Add cultural analysis context
+    if cultural_elements["cultural_regions"]:
+        regions = cultural_elements["cultural_regions"]
+        context_parts.append(f"CULTURAL REGIONS: {', '.join(regions)}")
+    
+    if cultural_elements["aesthetic_preferences"]:
+        preferences = cultural_elements["aesthetic_preferences"]
+        context_parts.append(f"AESTHETIC PREFERENCES: {', '.join(preferences)}")
+    
+    return "\n".join(context_parts) if context_parts else "Personal cultural style identity"
+
+def create_personalized_prompt(cultural_input: str, cultural_elements: Dict[str, Any], qloo_context: str) -> str:
+    """
+    Create a focused and effective personalized prompt for Gemini
+    """
+    
+    # Extract key cultural elements for the prompt
+    specific_elements = cultural_elements.get("specific_elements", {})
+    color_themes = cultural_elements.get("color_themes", [])
+    fabric_preferences = cultural_elements.get("fabric_preferences", [])
+    
+    # Build a focused cultural summary
+    cultural_summary = []
+    for element, details in specific_elements.items():
+        cultural_summary.append(f"• {element.title()}: {details['significance']}")
+    
+    prompt = f"""Create personalized fashion recommendations for this cultural input: "{cultural_input}"
+
+Cultural Elements:
+{chr(10).join(cultural_summary[:3])}
+
+Colors: {', '.join(color_themes[:3])}
+Fabrics: {', '.join(fabric_preferences[:3])}
+
+Create a unique style identity that reflects these cultural elements.
+
+Respond with this exact JSON format:
+{{
+    "aesthetic_name": "Unique style name reflecting the cultural input",
+    "brands": ["Brand1", "Brand2", "Brand3", "Brand4", "Brand5", "@InstagramBoutique"],
+    "outfit": "CORE APPROACH\\n[One sentence]\\n\\nSTYLING PHILOSOPHY\\n[3 principles]\\n\\nPRACTICAL CONSIDERATIONS\\n[3 recommendations]\\n\\nCULTURAL INTEGRATION\\n[3 cultural elements]",
+    "moodboard": "COLOR STORY\\n[3 colors with hex codes]\\n\\nTEXTURE GUIDE\\n[3 textures]\\n\\nCULTURAL ELEMENTS\\n[3 motifs]\\n\\nSTYLE APPROACH\\n[3 techniques]\\n\\nSEASONAL ADAPTATION\\n[Spring, Summer, Fall, Winter]\\n\\nPERSONAL EXPRESSION\\n[3 tips]"
+}}
+
+Be specific to the cultural input provided."""
+    
+    return prompt
+
+def build_cultural_context(cultural_elements: Dict[str, Any]) -> str:
+    """
+    Build detailed cultural context from analyzed elements
+    """
+    context_parts = []
+    
+    # Add raw elements
+    if cultural_elements.get("raw_elements"):
+        elements = cultural_elements["raw_elements"]
+        context_parts.append(f"CULTURAL ELEMENTS: {', '.join(elements)}")
+    
+    # Add themes
+    if cultural_elements.get("themes"):
+        themes = cultural_elements["themes"]
+        context_parts.append(f"IDENTIFIED THEMES: {', '.join(themes)}")
+    
+    # Add categories with details
+    if cultural_elements.get("categories"):
+        categories = cultural_elements["categories"]
+        for category, items in categories.items():
+            if items:
+                context_parts.append(f"{category.upper()}: {', '.join(items)}")
+    
+    # Add cultural regions
+    if cultural_elements.get("cultural_regions"):
+        regions = cultural_elements["cultural_regions"]
+        context_parts.append(f"CULTURAL REGIONS: {', '.join(regions)}")
+    
+    # Add aesthetic preferences
+    if cultural_elements.get("aesthetic_preferences"):
+        preferences = cultural_elements["aesthetic_preferences"]
+        context_parts.append(f"AESTHETIC PREFERENCES: {', '.join(preferences)}")
+    
+    # Add style keywords
+    if cultural_elements.get("style_keywords"):
+        keywords = cultural_elements["style_keywords"]
+        context_parts.append(f"STYLE KEYWORDS: {', '.join(keywords)}")
+    
+    # Add cultural significance
+    if cultural_elements.get("cultural_significance"):
+        significance = cultural_elements["cultural_significance"]
+        context_parts.append(f"CULTURAL SIGNIFICANCE: {', '.join(significance)}")
+    
+    # Add specific element analysis
+    if cultural_elements.get("specific_elements"):
+        specific_elements = cultural_elements["specific_elements"]
+        context_parts.append("DETAILED ELEMENT ANALYSIS:")
+        for element, details in specific_elements.items():
+            context_parts.append(f"  • {element.title()}: {details['significance']}")
+            context_parts.append(f"    Style: {details['style']}")
+            context_parts.append(f"    Colors: {', '.join(details['colors'])}")
+            context_parts.append(f"    Fabrics: {', '.join(details['fabrics'])}")
+    
+    return "\n".join(context_parts) if context_parts else "Personal cultural style identity"
+
+def create_styling_guidance(cultural_elements: Dict[str, Any]) -> str:
+    """
+    Create specific styling guidance based on cultural elements
+    """
+    guidance_parts = []
+    
+    # Add specific styling guidance based on cultural elements
+    if cultural_elements.get("specific_elements"):
+        specific_elements = cultural_elements["specific_elements"]
+        
+        for element, details in specific_elements.items():
+            element_guidance = f"STYLING FOR {element.upper()}:\n"
+            
+            if details["style"] == "sophisticated_fusion":
+                element_guidance += "• Blend classical Indian elements with contemporary silhouettes\n"
+                element_guidance += "• Use sophisticated color combinations with traditional fabrics\n"
+                element_guidance += "• Incorporate cultural motifs through accessories and details\n"
+                element_guidance += "• Focus on elegant layering and cultural fusion\n"
+                
+            elif details["style"] == "period_drama":
+                element_guidance += "• Embrace romantic and dramatic aesthetics\n"
+                element_guidance += "• Use rich, jewel-toned colors and luxurious fabrics\n"
+                element_guidance += "• Incorporate traditional Indian elements with modern styling\n"
+                element_guidance += "• Focus on statement pieces and cultural grandeur\n"
+                
+            elif details["style"] == "cyberpunk_noir":
+                element_guidance += "• Embrace futuristic and urban aesthetics\n"
+                element_guidance += "• Use dark colors with neon accents and metallic elements\n"
+                element_guidance += "• Incorporate tech-inspired fabrics and structured silhouettes\n"
+                element_guidance += "• Focus on sleek, modern lines with dystopian edge\n"
+                
+            elif details["style"] == "timeless_elegance":
+                element_guidance += "• Embrace classic sophistication with retro influences\n"
+                element_guidance += "• Use timeless colors and quality fabrics\n"
+                element_guidance += "• Incorporate vintage elements with modern styling\n"
+                element_guidance += "• Focus on enduring style and cultural heritage\n"
+                
+            elif details["style"] == "minimalist_philosophy":
+                element_guidance += "• Embrace clean lines and natural materials\n"
+                element_guidance += "• Use neutral colors and simple textures\n"
+                element_guidance += "• Incorporate cultural elements through subtle details\n"
+                element_guidance += "• Focus on harmony and peaceful aesthetics\n"
+                
+            elif details["style"] == "classical_indian":
+                element_guidance += "• Honor traditional Indian craftsmanship and aesthetics\n"
+                element_guidance += "• Use natural materials and traditional textiles\n"
+                element_guidance += "• Incorporate cultural motifs and spiritual elements\n"
+                element_guidance += "• Focus on cultural authenticity and heritage\n"
+                
+            elif details["style"] == "strategic_elegance":
+                element_guidance += "• Embrace structured and sophisticated aesthetics\n"
+                element_guidance += "• Use classic colors with strategic contrast\n"
+                element_guidance += "• Incorporate elements of strategy and precision\n"
+                element_guidance += "• Focus on timeless elegance with intellectual appeal\n"
+                
+            elif details["style"] == "art_deco_glamour":
+                element_guidance += "• Embrace Art Deco sophistication and glamour\n"
+                element_guidance += "• Use metallic accents and geometric patterns\n"
+                element_guidance += "• Incorporate luxury fabrics and cinematic elements\n"
+                element_guidance += "• Focus on dramatic elegance and vintage charm\n"
+                
+            guidance_parts.append(element_guidance)
+    
+    # Add general cultural fusion guidance
+    if cultural_elements.get("cultural_regions"):
+        regions = cultural_elements["cultural_regions"]
+        if "south_asian" in regions:
+            guidance_parts.append("SOUTH ASIAN FUSION GUIDANCE:\n")
+            guidance_parts.append("• Blend traditional Indian elements with contemporary fashion\n")
+            guidance_parts.append("• Use rich colors and traditional fabrics in modern silhouettes\n")
+            guidance_parts.append("• Incorporate cultural motifs through accessories and details\n")
+            guidance_parts.append("• Honor cultural heritage while embracing modern lifestyle\n")
+    
+    # Add aesthetic preference guidance
+    if cultural_elements.get("aesthetic_preferences"):
+        preferences = cultural_elements["aesthetic_preferences"]
+        if "timeless_elegance" in preferences:
+            guidance_parts.append("TIMELESS ELEGANCE GUIDANCE:\n")
+            guidance_parts.append("• Focus on classic silhouettes and quality materials\n")
+            guidance_parts.append("• Use enduring colors and sophisticated styling\n")
+            guidance_parts.append("• Incorporate vintage elements with contemporary appeal\n")
+            guidance_parts.append("• Create looks that transcend trends and seasons\n")
+        
+        if "cultural_fusion" in preferences:
+            guidance_parts.append("CULTURAL FUSION GUIDANCE:\n")
+            guidance_parts.append("• Blend multiple cultural influences harmoniously\n")
+            guidance_parts.append("• Use cultural elements as accents and statement pieces\n")
+            guidance_parts.append("• Honor cultural traditions while embracing modern fashion\n")
+            guidance_parts.append("• Create unique combinations that tell a cultural story\n")
+    
+    return "\n".join(guidance_parts) if guidance_parts else "Embrace your unique cultural style identity with confidence and authenticity."
+
+def validate_and_enhance_response(response_data: Dict[str, Any], cultural_elements: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Validate and enhance the AI response to ensure personalization
+    """
+    # Ensure all required fields are present
+    required_fields = ["aesthetic_name", "brands", "outfit", "moodboard"]
+    for field in required_fields:
+        if field not in response_data:
+            response_data[field] = ""
+    
+    # Enhance aesthetic name if it's too generic
+    if response_data["aesthetic_name"] and len(response_data["aesthetic_name"]) < 20:
+        # Make it more specific based on cultural elements
+        enhanced_name = enhance_aesthetic_name(response_data["aesthetic_name"], cultural_elements)
+        response_data["aesthetic_name"] = enhanced_name
+    
+    # Ensure brands are personalized
+    if response_data["brands"] and len(response_data["brands"]) < 6:
+        # Add more personalized brands
+        additional_brands = generate_additional_brands(cultural_elements)
+        response_data["brands"].extend(additional_brands[:6-len(response_data["brands"])])
+    
+    # Add success flag
+    response_data["success"] = True
+    
+    return response_data
+
+def enhance_aesthetic_name(base_name: str, cultural_elements: Dict[str, Any]) -> str:
+    """
+    Enhance aesthetic name to be more specific and personalized
+    """
+    enhancements = []
+    
+    if "ar rahman" in cultural_elements["raw_elements"]:
+        enhancements.append("Tamil Cinematic")
+    if "vintage" in cultural_elements["raw_elements"]:
+        enhancements.append("Vintage")
+    if "zen" in cultural_elements["raw_elements"]:
+        enhancements.append("Zen")
+    if "blade runner" in cultural_elements["raw_elements"]:
+        enhancements.append("Cyberpunk")
+    if "sza" in cultural_elements["raw_elements"]:
+        enhancements.append("Contemporary")
+    
+    if enhancements:
+        return f"{' '.join(enhancements)} {base_name}"
+    
+    return base_name
+
+def generate_additional_brands(cultural_elements: Dict[str, Any]) -> List[str]:
+    """
+    Generate additional personalized brands based on cultural elements
+    """
+    additional_brands = []
+    
+    if "ar rahman" in cultural_elements["raw_elements"]:
+        additional_brands.extend(["@DesiCraftStudio", "@TamilFashion", "@SouthAsianStyle"])
+    if "vintage" in cultural_elements["raw_elements"]:
+        additional_brands.extend(["@VintageRevival", "@RetroFinds", "@ClassicStyle"])
+    if "zen" in cultural_elements["raw_elements"]:
+        additional_brands.extend(["@ZenMinimalist", "@JapaneseStyle", "@PeacefulFashion"])
+    if "blade runner" in cultural_elements["raw_elements"]:
+        additional_brands.extend(["@CyberpunkFashion", "@FutureStyle", "@UrbanNoir"])
+    if "sza" in cultural_elements["raw_elements"]:
+        additional_brands.extend(["@ContemporaryChic", "@UrbanStyle", "@ModernFusion"])
+    
+    return additional_brands
 
 def generate_fallback_recommendations(cultural_input: str, qloo_data: Dict[str, Any]) -> Dict[str, Any]:
     """Generate dynamic fallback recommendations based on cultural input"""
@@ -134,52 +700,65 @@ def generate_fallback_recommendations(cultural_input: str, qloo_data: Dict[str, 
         # Create a dynamic fallback response based on cultural input
         cultural_terms = [term.strip().lower() for term in cultural_input.split(',')]
         
-        # Extract key themes and cultural elements
+        # Use AI to dynamically analyze the cultural input and extract themes
+        # Instead of hardcoded patterns, let the AI understand the cultural significance
         themes = []
         brand_categories = []
         
-        # Indian/South Asian influences
-        if any(term in ['indian', 'bollywood', 'rahman', 'tamil', 'hindi', 'sari', 'kurta', 'south asian'] for term in cultural_terms):
-            themes.append('Indian')
-            brand_categories.extend(['ethnic', 'luxury', 'artisan'])
-        
-        # Japanese/Korean influences
-        if any(term in ['japanese', 'korean', 'zen', 'minimalist', 'tokyo', 'seoul', 'kawaii', 'streetwear'] for term in cultural_terms):
-            themes.append('Japanese/Korean')
-            brand_categories.extend(['minimalist', 'streetwear', 'luxury'])
-        
-        # Western/American influences
-        if any(term in ['western', 'cowboy', 'americana', 'vintage', 'retro', 'classic'] for term in cultural_terms):
-            themes.append('Western')
-            brand_categories.extend(['vintage', 'heritage', 'luxury'])
-        
-        # Cyberpunk/Futuristic influences
-        if any(term in ['cyberpunk', 'futuristic', 'matrix', 'sci-fi', 'tech', 'digital'] for term in cultural_terms):
-            themes.append('Cyberpunk')
-            brand_categories.extend(['avant-garde', 'tech', 'streetwear'])
-        
-        # European influences
-        if any(term in ['french', 'italian', 'european', 'paris', 'milan', 'romantic', 'elegant'] for term in cultural_terms):
-            themes.append('European')
-            brand_categories.extend(['luxury', 'elegant', 'heritage'])
-        
-        # African influences
-        if any(term in ['african', 'afro', 'tribal', 'ethnic', 'wax print', 'ankara'] for term in cultural_terms):
-            themes.append('African')
-            brand_categories.extend(['ethnic', 'artisan', 'sustainable'])
-        
-        # Latin American influences
-        if any(term in ['latin', 'mexican', 'brazilian', 'caribbean', 'tropical', 'vibrant'] for term in cultural_terms):
-            themes.append('Latin American')
-            brand_categories.extend(['vibrant', 'artisan', 'sustainable'])
-        
-        # Vintage/Retro influences
-        if any(term in ['vintage', 'retro', '50s', '60s', '70s', '80s', '90s', 'classic'] for term in cultural_terms):
-            themes.append('Vintage')
-            brand_categories.extend(['vintage', 'heritage', 'sustainable'])
-        
-        # If no specific themes found, create a fusion aesthetic
-        if not themes:
+        # Let the AI analyze the cultural input dynamically
+        # This approach allows for ANY cultural input to be properly understood
+        try:
+            # Create a prompt to analyze the cultural input dynamically
+            analysis_prompt = f"""Analyze the cultural input: "{cultural_input}"
+
+            For each cultural element, identify:
+            1. The cultural region/background (e.g., Indian, Japanese, African, European, etc.)
+            2. The cultural significance and aesthetic implications
+            3. The style categories that would be relevant (e.g., luxury, ethnic, vintage, minimalist, etc.)
+            4. The fashion implications and style preferences
+
+            Return a JSON response with:
+            {{
+                "themes": ["list of identified cultural themes"],
+                "brand_categories": ["list of relevant brand categories"],
+                "cultural_analysis": "brief analysis of the cultural significance"
+            }}
+
+            Focus on understanding the cultural depth and fashion implications of each element mentioned."""
+            
+            # Use Gemini to analyze the cultural input dynamically
+            client = get_gemini_client()
+            if client is None:
+                themes = ['Cultural Fusion']
+                brand_categories = ['global', 'sustainable', 'artisan']
+            else:
+                analysis_response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[types.Content(role="user", parts=[types.Part(text=analysis_prompt)])],
+                config=types.GenerateContentConfig(
+                    temperature=0.3,
+                    max_output_tokens=300
+                ),
+            )
+            
+            # Parse the analysis response
+            if analysis_response.text:
+                try:
+                    import json
+                    analysis_data = json.loads(analysis_response.text)
+                    themes = analysis_data.get("themes", [])
+                    brand_categories = analysis_data.get("brand_categories", [])
+                except:
+                    # Fallback to basic analysis
+                    themes = ['Cultural Fusion']
+                    brand_categories = ['global', 'sustainable', 'artisan']
+            else:
+                themes = ['Cultural Fusion']
+                brand_categories = ['global', 'sustainable', 'artisan']
+                
+        except Exception as e:
+            logging.error(f"Dynamic cultural analysis failed: {e}")
+            # Fallback to basic analysis
             themes = ['Cultural Fusion']
             brand_categories = ['global', 'sustainable', 'artisan']
         
@@ -192,235 +771,442 @@ def generate_fallback_recommendations(cultural_input: str, qloo_data: Dict[str, 
         # Generate dynamic brands based on themes and categories
         dynamic_brands = generate_dynamic_brands(themes, brand_categories)
         
-        # Generate dynamic outfit description
-        outfit_description = generate_dynamic_outfit(themes, cultural_terms)
+        # Generate personalized outfit description using enhanced prompt
+        try:
+            # Create a personalized prompt for the fallback
+            personalized_prompt = f"""CULTURAL INPUT ANALYSIS:
+            Cultural preferences: {cultural_input}
+            
+            CRITICAL ANALYSIS REQUIREMENTS:
+            
+            1. **DEEP CULTURAL ANALYSIS**: Analyze each cultural element in the input "{cultural_input}" and understand:
+               - What each element represents culturally and aesthetically
+               - How these elements combine to create a unique style identity
+               - The specific fashion implications of each cultural reference
+            
+            2. **PERSONALIZATION REQUIREMENTS**:
+               - Create recommendations that are SPECIFIC to the exact cultural input provided
+               - Do NOT use generic examples - every recommendation must reference the actual cultural elements mentioned
+               - Analyze the cultural significance and translate it into specific fashion choices
+            
+            Generate a HIGHLY PERSONALIZED outfit description that SPECIFICALLY reflects the cultural elements in "{cultural_input}".
+            
+            Use this EXACT clean, professional format:
+            
+            SIGNATURE OUTFIT RECOMMENDATION
+            
+            CORE APPROACH
+            [Create a sophisticated fusion that reflects the specific cultural elements mentioned in the input, with exact garment types and cultural significance]
+            
+            STYLING PHILOSOPHY
+            [Explain the styling approach that honors the cultural elements, with each concept on a new line]
+            
+            PRACTICAL CONSIDERATIONS
+            [List specific investment pieces that reflect the cultural input, with each piece on a new line]
+            
+            CULTURAL INTEGRATION
+            [Show how to authentically integrate the cultural elements, with each element on a new line]
+            
+            Each sentence should start on a new line after a full stop for better readability and professional appearance.
+            
+            CRITICAL: Every recommendation must be HIGHLY PERSONALIZED to the cultural input "{cultural_input}". Do not provide generic responses - analyze the specific cultural elements and create recommendations that directly reflect those influences."""
+
+            # Try to get a personalized response from Gemini with retry logic
+            max_retries = 3
+            response = None
+            
+            client = get_gemini_client()
+            if client is None:
+                # Fallback to dynamic generation without AI
+                outfit_description = generate_dynamic_outfit(themes, cultural_terms)
+            else:
+                for attempt in range(max_retries):
+                    try:
+                        response = client.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=[types.Content(role="user", parts=[types.Part(text=personalized_prompt)])],
+                            config=types.GenerateContentConfig(
+                                temperature=0.8,
+                                max_output_tokens=400
+                            ),
+                        )
+                        break  # Success, exit retry loop
+                    except Exception as e:
+                        logging.error(f"Fallback Gemini API attempt {attempt + 1} failed: {str(e)}")
+                        if attempt == max_retries - 1:
+                            # Last attempt failed, will use dynamic outfit
+                            response = None
+                            break
+                        # Wait before retry (exponential backoff)
+                        import time
+                        time.sleep(2 ** attempt)  # 1s, 2s, 4s delays
+                
+                if response and response.text and response.text.strip():
+                    outfit_description = response.text.strip()
+                else:
+                    # Fallback to dynamic outfit if Gemini fails
+                    outfit_description = generate_dynamic_outfit(themes, cultural_terms)
+                
+        except Exception as e:
+            logging.error(f"Personalized outfit generation failed: {e}")
+            # Fallback to dynamic outfit if personalized generation fails
+            outfit_description = generate_dynamic_outfit(themes, cultural_terms)
         
         # Generate dynamic moodboard description
         moodboard_description = generate_dynamic_moodboard(themes, cultural_terms)
+        
+        # Apply sentence formatting to outfit and moodboard
+        formatted_outfit = format_sentences_with_breaks(outfit_description)
+        formatted_moodboard = format_sentences_with_breaks(moodboard_description)
         
         return {
             "success": True,
             "aesthetic_name": aesthetic_name,
             "brands": dynamic_brands,
-            "outfit": outfit_description,
-            "moodboard": moodboard_description,
+            "outfit": formatted_outfit,
+            "moodboard": formatted_moodboard,
             "fallback": True
         }
         
     except Exception as e:
         logging.error(f"Fallback generation failed: {e}")
+        # Apply sentence formatting to outfit and moodboard
+        formatted_outfit = format_sentences_with_breaks("A personalized ensemble that reflects your cultural influences and personal style preferences.")
+        formatted_moodboard = format_sentences_with_breaks("A rich blend of cultural elements, colors, and textures that capture the essence of your unique style identity.")
+        
         return {
             "success": True,
             "aesthetic_name": "Cultural Style Identity",
             "brands": ["Global Fashion", "Sustainable Style", "Cultural Fusion", "Vintage Finds", "@StyleCollective", "DIY Studio"],
-            "outfit": "A personalized ensemble that reflects your cultural influences and personal style preferences.",
-            "moodboard": "A rich blend of cultural elements, colors, and textures that capture the essence of your unique style identity.",
+            "outfit": formatted_outfit,
+            "moodboard": formatted_moodboard,
             "fallback": True
         }
 
 def generate_dynamic_brands(themes: list, categories: list) -> list:
-    """Generate dynamic brand recommendations based on themes and categories"""
-    brand_database = {
-        'indian': {
-            'luxury': ['Anita Dongre', 'Sabyasachi', 'Manish Malhotra'],
-            'ethnic': ['Fabindia', 'Biba', 'W for Woman'],
-            'artisan': ['@DesiCraftStudio', '@EthnicVibes', '@HandloomHub'],
-            'sustainable': ['@EcoEthnic', '@GreenSaree', '@SustainableSilk']
-        },
-        'japanese/korean': {
-            'minimalist': ['Uniqlo', 'Muji', 'COS'],
-            'streetwear': ['BAPE', 'Comme des Garçons', 'Off-White'],
-            'luxury': ['Issey Miyake', 'Yohji Yamamoto', 'Sacai'],
-            'kawaii': ['@KawaiiFashion', '@TokyoStyle', '@SeoulVibes']
-        },
-        'western': {
-            'vintage': ['Levi\'s Vintage', 'Carhartt', 'Filson'],
-            'heritage': ['Ralph Lauren', 'Tommy Hilfiger', 'Brooks Brothers'],
-            'luxury': ['Ralph Lauren Purple Label', 'Tom Ford', 'Saint Laurent'],
-            'sustainable': ['@VintageWestern', '@HeritageStyle', '@CowboyChic']
-        },
-        'cyberpunk': {
-            'avant-garde': ['Rick Owens', 'Balenciaga', 'Vetements'],
-            'tech': ['@CyberFashion', '@TechWear', '@DigitalStyle'],
-            'streetwear': ['Off-White', 'Supreme', 'Palace'],
-            'luxury': ['@NeoFuturist', '@DigitalLuxe', '@TechCouture']
-        },
-        'european': {
-            'luxury': ['Chanel', 'Dior', 'Hermès'],
-            'elegant': ['Celine', 'Bottega Veneta', 'Loewe'],
-            'heritage': ['Burberry', 'Aquascutums', 'Barbour'],
-            'sustainable': ['@ParisianChic', '@MilanStyle', '@EuropeanElegance']
-        },
-        'african': {
-            'ethnic': ['@AfricanPrints', '@WaxPrintStyle', '@AnkaraFashion'],
-            'artisan': ['@HandmadeAfrica', '@TribalCraft', '@AfricanArtisan'],
-            'sustainable': ['@EcoAfrica', '@SustainableWax', '@GreenAnkara'],
-            'luxury': ['@LuxeAfrica', '@AfricanCouture', '@TribalLuxe']
-        },
-        'latin american': {
-            'vibrant': ['@LatinVibes', '@TropicalStyle', '@CaribbeanChic'],
-            'artisan': ['@HandmadeLatina', '@ArtisanCraft', '@LatinCraft'],
-            'sustainable': ['@EcoLatina', '@GreenTropical', '@SustainableVibes'],
-            'luxury': ['@LuxeLatina', '@LatinCouture', '@TropicalLuxe']
-        },
-        'vintage': {
-            'vintage': ['@VintageFinds', '@RetroStyle', '@ClassicVintage'],
-            'heritage': ['@HeritageStyle', '@TimelessFashion', '@ClassicChic'],
-            'sustainable': ['@EcoVintage', '@GreenRetro', '@SustainableClassic'],
-            'luxury': ['@VintageLuxe', '@RetroCouture', '@ClassicLuxe']
-        },
-        'cultural fusion': {
-            'global': ['@GlobalStyle', '@FusionFashion', '@CulturalMix'],
-            'sustainable': ['@EcoFusion', '@GreenGlobal', '@SustainableMix'],
-            'artisan': ['@HandmadeGlobal', '@ArtisanFusion', '@CraftMix']
-        }
-    }
-    
-    selected_brands = []
-    
-    # Select brands based on themes and categories
-    for theme in themes:
-        theme_lower = theme.lower()
-        if theme_lower in brand_database:
-            for category in categories:
-                if category in brand_database[theme_lower]:
-                    # Add 1-2 brands from each category
-                    brands = brand_database[theme_lower][category]
-                    selected_brands.extend(brands[:2])
-    
-    # Ensure we have exactly 6 brands
-    if len(selected_brands) < 6:
-        # Add some universal brands
-        universal_brands = ['@GlobalStyleFinds', '@SustainableFashion', '@VintageRevival', '@CulturalFusion', '@ArtisanCraft', '@EcoStyle']
-        selected_brands.extend(universal_brands[:6-len(selected_brands)])
-    elif len(selected_brands) > 6:
-        selected_brands = selected_brands[:6]
-    
-    return selected_brands
-
-def generate_dynamic_outfit(themes: list, cultural_terms: list) -> str:
-    """Generate dynamic outfit description based on themes"""
-    outfit_templates = {
-        'indian': "A fusion of traditional Indian elegance with contemporary flair. Think silk kurtas paired with modern denim, statement jewelry that bridges heritage and current trends, and footwear that combines comfort with cultural authenticity. Layer with a lightweight dupatta or scarf for added dimension.",
-        'japanese/korean': "Clean lines and minimalist sophistication define this aesthetic. Structured blazers over crisp white shirts, wide-leg trousers with precise tailoring, and accessories that emphasize quality over quantity. Footwear balances comfort with sleek design, while layering creates depth without clutter.",
-        'western': "Heritage meets modern sensibility with denim jackets, vintage-inspired shirts, and boots that tell a story. Mix classic silhouettes with contemporary details, add leather accessories for authenticity, and layer with timeless pieces that transcend seasons.",
-        'cyberpunk': "Futuristic streetwear with avant-garde elements. Oversized silhouettes, technical fabrics, and bold accessories create a look that's both edgy and sophisticated. Mix high-tech materials with streetwear staples, and add statement pieces that push boundaries.",
-        'european': "Timeless elegance with contemporary refinement. Structured coats, tailored separates, and quality accessories that speak to heritage and craftsmanship. Focus on fit, fabric, and details that elevate everyday pieces to luxury status.",
-        'african': "Vibrant prints and bold colors celebrate cultural heritage. Mix traditional wax prints with modern silhouettes, add statement jewelry that honors craftsmanship, and layer with pieces that tell stories of tradition and innovation.",
-        'latin american': "Tropical vibes meet urban sophistication. Bright colors, flowing fabrics, and accessories that celebrate cultural heritage. Mix traditional elements with contemporary pieces, and add touches that reflect the warmth and vibrancy of Latin culture.",
-        'vintage': "Timeless pieces with retro charm. Mix eras thoughtfully, layer vintage finds with modern basics, and accessorize with pieces that have character and history. Focus on quality over quantity and pieces that tell a story."
-    }
-    
-    # Select primary theme for outfit
-    primary_theme = themes[0].lower() if themes else 'cultural fusion'
-    
-    if primary_theme in outfit_templates:
-        return outfit_templates[primary_theme]
-    else:
-        return "A personalized ensemble that reflects your cultural influences and personal style preferences, combining traditional elements with contemporary pieces to create a unique aesthetic that celebrates your heritage while embracing modern sensibilities."
-
-def generate_dynamic_moodboard(themes: list, cultural_terms: list) -> str:
-    """Generate dynamic moodboard description based on themes"""
-    moodboard_templates = {
-        'indian': "Rich jewel tones and warm earth colors create a palette of deep burgundies, golden yellows, and emerald greens. Textures range from smooth silk to intricate embroidery, while architectural elements draw from Mughal palaces and modern Indian cities. Cultural motifs include paisleys, mandalas, and geometric patterns, all bathed in warm, golden lighting that evokes the magic of Indian cinema and traditional celebrations.",
-        'japanese/korean': "Clean, minimalist aesthetics with a focus on natural materials and neutral tones. Think soft grays, warm whites, and subtle earth tones. Textures emphasize natural fibers, smooth surfaces, and precise craftsmanship. Architectural elements reflect Zen principles and modern urban design, while cultural motifs include cherry blossoms, geometric patterns, and calligraphic elements. Lighting is soft and natural, creating a sense of calm sophistication.",
-        'western': "Warm, earthy tones dominate with rich browns, deep blues, and natural leather colors. Textures include worn denim, soft suede, and aged leather, while architectural elements draw from rustic barns and modern ranches. Cultural motifs feature stars, horses, and geometric patterns, all illuminated by warm, golden hour lighting that creates a sense of nostalgia and authenticity.",
-        'cyberpunk': "High contrast aesthetics with neon colors against dark backgrounds. Electric blues, hot pinks, and metallic silvers create a futuristic palette. Textures range from sleek metallic surfaces to distressed fabrics, while architectural elements reflect urban decay and high-tech environments. Cultural motifs include digital glitches, circuit patterns, and neon signs, all bathed in artificial lighting that creates a sense of otherworldly atmosphere.",
-        'european': "Sophisticated neutrals and rich jewel tones create a palette of deep navies, warm creams, and elegant grays. Textures emphasize quality fabrics, fine tailoring, and luxurious materials. Architectural elements draw from classical European design and modern urban sophistication. Cultural motifs include fleur-de-lis, geometric patterns, and artistic elements, all illuminated by soft, elegant lighting that creates a sense of timeless beauty.",
-        'african': "Vibrant, bold colors with rich earth tones and bright accents. Think deep oranges, bright yellows, and rich greens. Textures include wax prints, handwoven fabrics, and natural materials. Architectural elements draw from traditional African design and modern urban centers. Cultural motifs feature tribal patterns, animal prints, and geometric designs, all bathed in warm, natural lighting that celebrates cultural heritage.",
-        'latin american': "Warm, tropical colors with bright accents and rich earth tones. Vibrant oranges, deep blues, and bright greens create a lively palette. Textures include flowing fabrics, handcrafted elements, and natural materials. Architectural elements reflect colonial heritage and modern Latin American cities. Cultural motifs include floral patterns, geometric designs, and traditional symbols, all illuminated by warm, tropical lighting that creates a sense of warmth and celebration.",
-        'vintage': "Muted, nostalgic colors with warm undertones and subtle patinas. Soft pastels, warm browns, and faded jewel tones create a timeless palette. Textures include aged fabrics, worn leather, and vintage materials. Architectural elements draw from various historical periods and classic design. Cultural motifs include retro patterns, vintage graphics, and timeless symbols, all bathed in soft, nostalgic lighting that creates a sense of history and charm."
-    }
-    
-    # Select primary theme for moodboard
-    primary_theme = themes[0].lower() if themes else 'cultural fusion'
-    
-    if primary_theme in moodboard_templates:
-        return moodboard_templates[primary_theme]
-    else:
-        return "A rich blend of cultural elements, colors, and textures that capture the essence of your unique style identity. The aesthetic combines traditional influences with contemporary sensibilities, creating a visual world that celebrates diversity and personal expression."
-
-def chat_with_stylist(user_message: str, context: str = "") -> str:
-    """
-    Enhanced AI stylist chat feature for additional style questions
-    """
+    """Generate dynamic brand recommendations based on themes and categories using AI"""
     try:
-        # Enhanced system prompt for better responses
-        system_prompt = """You are Mimesis, a friendly and knowledgeable AI stylist specializing in cultural style intelligence. Your role is to help users with fashion questions while maintaining focus on:
+        # Create a prompt to generate brand recommendations dynamically
+        brand_prompt = f"""Based on the cultural themes: {themes} and style categories: {categories}
 
-- Cultural identity-based styling and personal expression
-- Inclusive, budget-conscious recommendations (luxury to thrift)
-- Sustainable fashion choices and eco-friendly options
-- Global brand diversity and cultural fusion
-- Creative, personalized advice for unique style identities
+        Generate 6 brand recommendations that would be relevant and authentic to these cultural influences.
+        Include a mix of:
+        - Established luxury brands
+        - Emerging designers
+        - Cultural-specific brands
+        - Instagram boutiques/handles
+        - Sustainable and artisan options
 
-Guidelines:
-- Keep responses conversational, helpful, and under 200 words
-- Provide specific, actionable advice
-- Include cultural context when relevant
-- Suggest sustainable alternatives when possible
-- Be encouraging and supportive of personal style exploration
+        Return a JSON response with:
+        {{
+            "brands": ["list of 6 brand names"],
+            "reasoning": "brief explanation of why these brands are relevant"
+        }}
 
-Remember: You're helping someone discover their unique aesthetic identity through cultural influences."""
-
-        # Create a more detailed prompt with context
-        if context:
-            full_prompt = f"""Context about the user's style identity:
-{context}
-
-User's current question: {user_message}
-
-Please provide personalized advice based on their style context."""
-        else:
-            full_prompt = f"""User question: {user_message}
-
-Please provide helpful fashion advice focusing on cultural style intelligence and personal expression."""
-
-        response = client.models.generate_content(
+        Focus on brands that authentically represent the cultural themes and provide diverse options for different budgets and preferences."""
+        
+        # Use Gemini to generate brand recommendations dynamically
+        client = get_gemini_client()
+        if client is None:
+            # Fallback to universal brands
+            return ['@GlobalStyleFinds', '@SustainableFashion', '@VintageRevival', '@CulturalFusion', '@ArtisanCraft', '@EcoStyle']
+        
+        brand_response = client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=[
-                types.Content(role="user", parts=[types.Part(text=full_prompt)])
-            ],
+            contents=[types.Content(role="user", parts=[types.Part(text=brand_prompt)])],
             config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                temperature=0.8,
+                temperature=0.7,
                 max_output_tokens=400
             ),
         )
-
-        if response.text and response.text.strip():
-            return response.text.strip()
+        
+        # Parse the brand response
+        if brand_response.text:
+            try:
+                import json
+                brand_data = json.loads(brand_response.text)
+                selected_brands = brand_data.get("brands", [])
+                
+                # Ensure we have exactly 6 brands
+                if len(selected_brands) < 6:
+                    # Add some universal brands to fill the gap
+                    universal_brands = ['@GlobalStyleFinds', '@SustainableFashion', '@VintageRevival', '@CulturalFusion', '@ArtisanCraft', '@EcoStyle']
+                    selected_brands.extend(universal_brands[:6-len(selected_brands)])
+                elif len(selected_brands) > 6:
+                    selected_brands = selected_brands[:6]
+                
+                return selected_brands
+            except:
+                # Fallback to universal brands
+                return ['@GlobalStyleFinds', '@SustainableFashion', '@VintageRevival', '@CulturalFusion', '@ArtisanCraft', '@EcoStyle']
         else:
-            return generate_chat_fallback_response(user_message)
-
-    except Exception as e:
-        logging.error(f"Chat error: {str(e)}")
-        return generate_chat_fallback_response(user_message)
-
-def generate_chat_fallback_response(user_message: str) -> str:
-    """Generate helpful fallback responses for chat when Gemini fails"""
-    try:
-        message_lower = user_message.lower()
-        
-        # Provide context-aware fallback responses
-        if any(word in message_lower for word in ['accessor', 'jewelry', 'bag', 'shoes']):
-            return "For accessories, I'd recommend focusing on pieces that complement your cultural aesthetic. Consider sustainable jewelry brands, vintage finds, or handmade pieces that reflect your personal style. Mix high and low - a statement piece with everyday basics always works!"
-        
-        elif any(word in message_lower for word in ['makeup', 'beauty', 'cosmetic']):
-            return "Your makeup should enhance your natural beauty and complement your cultural aesthetic. Look for brands that celebrate diverse beauty standards. Consider sustainable beauty options and techniques that work with your skin type and lifestyle."
-        
-        elif any(word in message_lower for word in ['sustain', 'eco', 'green', 'ethical']):
-            return "Great question! Sustainable fashion is all about conscious choices. Look for thrift stores, vintage shops, and brands with transparent supply chains. Consider upcycling, clothing swaps, and investing in quality pieces that last. Every small choice makes a difference!"
-        
-        elif any(word in message_lower for word in ['occasion', 'event', 'party', 'work']):
-            return "For special occasions, think about how your cultural influences can shine through. Mix traditional elements with contemporary pieces, or use accessories to add cultural flair to classic silhouettes. Confidence is your best accessory!"
-        
-        elif any(word in message_lower for word in ['budget', 'cheap', 'afford', 'price']):
-            return "Style doesn't have to break the bank! Thrift stores, vintage markets, and online resale platforms are treasure troves. Mix high-street basics with unique vintage finds. Remember, personal style is about creativity, not cost."
-        
-        else:
-            return "I'd love to help you with your style question! Consider how your cultural influences can guide your choices - whether it's through colors, textures, silhouettes, or accessories. What specific aspect of your style are you looking to explore?"
+            # Fallback to universal brands
+            return ['@GlobalStyleFinds', '@SustainableFashion', '@VintageRevival', '@CulturalFusion', '@ArtisanCraft', '@EcoStyle']
             
     except Exception as e:
-        logging.error(f"Fallback chat response generation failed: {e}")
-        return "I'm here to help with your style questions! Feel free to ask about accessories, sustainable options, makeup, or any other fashion advice. Your unique cultural background is a great source of style inspiration."
+        logging.error(f"Dynamic brand generation failed: {e}")
+        # Fallback to universal brands
+        return ['@GlobalStyleFinds', '@SustainableFashion', '@VintageRevival', '@CulturalFusion', '@ArtisanCraft', '@EcoStyle']
+
+def generate_dynamic_outfit(themes: list, cultural_terms: list) -> str:
+    """Generate comprehensive dynamic outfit description based on themes using AI"""
+    try:
+        # Create a prompt to generate outfit recommendations dynamically
+        outfit_prompt = f"""Based on the cultural themes: {themes} and cultural terms: {cultural_terms}
+
+        Generate a practical, actionable outfit recommendation with this exact structure:
+
+        CORE APPROACH
+        [One clear sentence describing the overall style philosophy that directly connects to the cultural input]
+
+        STYLING PHILOSOPHY
+        [3-4 specific styling principles, each on its own line, that honor the cultural elements]
+
+        PRACTICAL CONSIDERATIONS
+        [3-4 specific garment recommendations, each on its own line, with clear cultural connections]
+
+        CULTURAL INTEGRATION
+        [3-4 specific ways to integrate cultural elements, each on its own line, with practical examples]
+
+        Keep each section concise and practical. Focus on specific, actionable advice that directly reflects the cultural themes provided."""
+        
+        # Use Gemini to generate outfit recommendations dynamically
+        client = get_gemini_client()
+        if client is None:
+            # Fallback to basic outfit description
+            return """CORE APPROACH
+A sophisticated fusion that reflects your cultural influences and personal style preferences.
+
+STYLING PHILOSOPHY
+Embrace the unique elements of your cultural background with contemporary styling techniques.
+Layer traditional elements with modern silhouettes for a balanced aesthetic.
+Choose quality fabrics that honor your heritage while embracing modern lifestyle.
+Focus on pieces that tell your cultural story through thoughtful design choices.
+
+PRACTICAL CONSIDERATIONS
+Invest in a statement piece that directly reflects your cultural background.
+Choose versatile separates that can be styled multiple ways.
+Select accessories that incorporate cultural motifs or traditional craftsmanship.
+Build a capsule wardrobe that honors your heritage while being practical for daily wear.
+
+CULTURAL INTEGRATION
+Incorporate traditional patterns through scarves, jewelry, or accent pieces.
+Choose colors that reflect your cultural palette and personal preferences.
+Select fabrics that have cultural significance or traditional craftsmanship.
+Style pieces in ways that honor their cultural origins while feeling contemporary."""
+        
+        outfit_response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[types.Content(role="user", parts=[types.Part(text=outfit_prompt)])],
+            config=types.GenerateContentConfig(
+                temperature=0.8,
+                max_output_tokens=600
+            ),
+        )
+        
+        # Return the generated outfit description
+        if outfit_response.text:
+            return outfit_response.text.strip()
+        else:
+            # Fallback to basic outfit description
+            return """CORE APPROACH
+A sophisticated fusion that reflects your cultural influences and personal style preferences.
+
+STYLING PHILOSOPHY
+Embrace the unique elements of your cultural background with contemporary styling techniques.
+Layer traditional elements with modern silhouettes for a balanced aesthetic.
+Choose quality fabrics that honor your heritage while embracing modern lifestyle.
+Focus on pieces that tell your cultural story through thoughtful design choices.
+
+PRACTICAL CONSIDERATIONS
+Invest in a statement piece that directly reflects your cultural background.
+Choose versatile separates that can be styled multiple ways.
+Select accessories that incorporate cultural motifs or traditional craftsmanship.
+Build a capsule wardrobe that honors your heritage while being practical for daily wear.
+
+CULTURAL INTEGRATION
+Incorporate traditional patterns through scarves, jewelry, or accent pieces.
+Choose colors that reflect your cultural palette and personal preferences.
+Select fabrics that have cultural significance or traditional craftsmanship.
+Style pieces in ways that honor their cultural origins while feeling contemporary."""
+            
+    except Exception as e:
+        logging.error(f"Dynamic outfit generation failed: {e}")
+        # Fallback to basic outfit description
+        return """CORE APPROACH
+A sophisticated fusion that reflects your cultural influences and personal style preferences.
+
+STYLING PHILOSOPHY
+Embrace the unique elements of your cultural background with contemporary styling techniques.
+Layer traditional elements with modern silhouettes for a balanced aesthetic.
+Choose quality fabrics that honor your heritage while embracing modern lifestyle.
+Focus on pieces that tell your cultural story through thoughtful design choices.
+
+PRACTICAL CONSIDERATIONS
+Invest in a statement piece that directly reflects your cultural background.
+Choose versatile separates that can be styled multiple ways.
+Select accessories that incorporate cultural motifs or traditional craftsmanship.
+Build a capsule wardrobe that honors your heritage while being practical for daily wear.
+
+CULTURAL INTEGRATION
+Incorporate traditional patterns through scarves, jewelry, or accent pieces.
+Choose colors that reflect your cultural palette and personal preferences.
+Select fabrics that have cultural significance or traditional craftsmanship.
+Style pieces in ways that honor their cultural origins while feeling contemporary."""
+
+def generate_dynamic_moodboard(themes: list, cultural_terms: list) -> str:
+    """Generate dynamic style vision board description based on themes and cultural elements using AI"""
+    try:
+        # Create a prompt to generate moodboard recommendations dynamically
+        moodboard_prompt = f"""Based on the cultural themes: {themes} and cultural terms: {cultural_terms}
+
+        Generate a practical style vision board with this exact structure:
+
+        COLOR STORY
+        [3-4 specific colors with cultural significance, each on its own line, including hex codes if possible]
+
+        TEXTURE GUIDE
+        [3-4 specific textures and materials, each on its own line, that authentically represent the cultural themes]
+
+        CULTURAL ELEMENTS
+        [3-4 specific cultural motifs, patterns, or design elements, each on its own line, from the input]
+
+        STYLE APPROACH
+        [3-4 specific ways to blend cultural elements with contemporary fashion, each on its own line]
+
+        SEASONAL ADAPTATION
+        [4 specific seasonal adaptations, each on its own line, with practical styling advice]
+
+        PERSONAL EXPRESSION
+        [3-4 ways to personalize the cultural elements, each on its own line, with actionable suggestions]
+
+        Keep each section concise and practical. Focus on specific, actionable style guidance that directly reflects the cultural themes provided."""
+        
+        # Use Gemini to generate moodboard recommendations dynamically
+        client = get_gemini_client()
+        if client is None:
+            # Fallback to basic moodboard description
+            return """COLOR STORY
+Deep ochre (#D68C45) - representing earth and tradition.
+Sage green (#9CAF88) - symbolizing growth and harmony.
+Cream white (#F5F5DC) - embodying purity and elegance.
+Rich burgundy (#800020) - reflecting passion and heritage.
+
+TEXTURE GUIDE
+Luxurious silk fabrics that honor traditional craftsmanship.
+Handwoven textiles with authentic cultural patterns.
+Soft cashmere blends for contemporary comfort.
+Textured embroidery and beadwork for cultural authenticity.
+
+CULTURAL ELEMENTS
+Traditional motifs and patterns from your cultural heritage.
+Handcrafted jewelry and accessories with cultural significance.
+Artisanal textiles and fabrics with authentic designs.
+Cultural symbols and emblems integrated into modern pieces.
+
+STYLE APPROACH
+Blend traditional silhouettes with contemporary cuts for modern appeal.
+Layer cultural accessories with minimalist contemporary pieces.
+Mix heritage fabrics with modern styling techniques.
+Combine traditional colors with contemporary fashion trends.
+
+SEASONAL ADAPTATION
+Spring: Light silk scarves with cultural patterns over fresh white pieces.
+Summer: Breathable cotton with traditional motifs in vibrant colors.
+Fall: Rich velvet and wool pieces with cultural embroidery details.
+Winter: Layered looks with traditional textiles and modern outerwear.
+
+PERSONAL EXPRESSION
+Choose cultural elements that resonate most with your personal story.
+Experiment with modern interpretations of traditional patterns.
+Select pieces that honor your heritage while reflecting your lifestyle.
+Create unique combinations that tell your individual cultural narrative."""
+        
+        moodboard_response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[types.Content(role="user", parts=[types.Part(text=moodboard_prompt)])],
+            config=types.GenerateContentConfig(
+                temperature=0.8,
+                max_output_tokens=600
+            ),
+        )
+        
+        # Return the generated moodboard description
+        if moodboard_response.text:
+            return moodboard_response.text.strip()
+        else:
+            # Fallback to basic moodboard description
+            return """COLOR STORY
+Deep ochre (#D68C45) - representing earth and tradition.
+Sage green (#9CAF88) - symbolizing growth and harmony.
+Cream white (#F5F5DC) - embodying purity and elegance.
+Rich burgundy (#800020) - reflecting passion and heritage.
+
+TEXTURE GUIDE
+Luxurious silk fabrics that honor traditional craftsmanship.
+Handwoven textiles with authentic cultural patterns.
+Soft cashmere blends for contemporary comfort.
+Textured embroidery and beadwork for cultural authenticity.
+
+CULTURAL ELEMENTS
+Traditional motifs and patterns from your cultural heritage.
+Handcrafted jewelry and accessories with cultural significance.
+Artisanal textiles and fabrics with authentic designs.
+Cultural symbols and emblems integrated into modern pieces.
+
+STYLE APPROACH
+Blend traditional silhouettes with contemporary cuts for modern appeal.
+Layer cultural accessories with minimalist contemporary pieces.
+Mix heritage fabrics with modern styling techniques.
+Combine traditional colors with contemporary fashion trends.
+
+SEASONAL ADAPTATION
+Spring: Light silk scarves with cultural patterns over fresh white pieces.
+Summer: Breathable cotton with traditional motifs in vibrant colors.
+Fall: Rich velvet and wool pieces with cultural embroidery details.
+Winter: Layered looks with traditional textiles and modern outerwear.
+
+PERSONAL EXPRESSION
+Choose cultural elements that resonate most with your personal story.
+Experiment with modern interpretations of traditional patterns.
+Select pieces that honor your heritage while reflecting your lifestyle.
+Create unique combinations that tell your individual cultural narrative."""
+            
+    except Exception as e:
+        logging.error(f"Dynamic moodboard generation failed: {e}")
+        # Fallback to basic moodboard description
+        return """COLOR STORY
+Deep ochre (#D68C45) - representing earth and tradition.
+Sage green (#9CAF88) - symbolizing growth and harmony.
+Cream white (#F5F5DC) - embodying purity and elegance.
+Rich burgundy (#800020) - reflecting passion and heritage.
+
+TEXTURE GUIDE
+Luxurious silk fabrics that honor traditional craftsmanship.
+Handwoven textiles with authentic cultural patterns.
+Soft cashmere blends for contemporary comfort.
+Textured embroidery and beadwork for cultural authenticity.
+
+CULTURAL ELEMENTS
+Traditional motifs and patterns from your cultural heritage.
+Handcrafted jewelry and accessories with cultural significance.
+Artisanal textiles and fabrics with authentic designs.
+Cultural symbols and emblems integrated into modern pieces.
+
+STYLE APPROACH
+Blend traditional silhouettes with contemporary cuts for modern appeal.
+Layer cultural accessories with minimalist contemporary pieces.
+Mix heritage fabrics with modern styling techniques.
+Combine traditional colors with contemporary fashion trends.
+
+SEASONAL ADAPTATION
+Spring: Light silk scarves with cultural patterns over fresh white pieces.
+Summer: Breathable cotton with traditional motifs in vibrant colors.
+Fall: Rich velvet and wool pieces with cultural embroidery details.
+Winter: Layered looks with traditional textiles and modern outerwear.
+
+PERSONAL EXPRESSION
+Choose cultural elements that resonate most with your personal story.
+Experiment with modern interpretations of traditional patterns.
+Select pieces that honor your heritage while reflecting your lifestyle.
+Create unique combinations that tell your individual cultural narrative."""

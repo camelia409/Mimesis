@@ -82,21 +82,6 @@ class StyleRequest(db.Model):
     user_feedback = db.Column(db.Text, nullable=True)
 
 
-class ChatMessage(db.Model):
-    """Model for storing AI stylist chat conversations"""
-    id = db.Column(db.Integer, primary_key=True)
-    style_request_id = db.Column(db.Integer, db.ForeignKey('style_request.id'), nullable=True)
-    
-    # Chat data
-    user_message = db.Column(db.Text, nullable=False)
-    ai_response = db.Column(db.Text, nullable=False)
-    context = db.Column(db.Text, nullable=True)  # Style context for the chat
-    
-    # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    response_time_ms = db.Column(db.Integer, nullable=True)
-
-
 class PopularCulturalInput(db.Model):
     """Model for tracking popular cultural combinations for analytics"""
     id = db.Column(db.Integer, primary_key=True)
@@ -127,7 +112,6 @@ class SystemMetrics(db.Model):
     
     # User engagement
     unique_ips = db.Column(db.Integer, default=0)
-    chat_messages = db.Column(db.Integer, default=0)
     user_ratings_submitted = db.Column(db.Integer, default=0)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
