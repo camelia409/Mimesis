@@ -2,8 +2,8 @@ import json
 import logging
 import os
 from typing import Dict, Any, List
-from google import genai
-from google.genai import types
+import google.generativeai as genai
+from google.generativeai import types
 from pydantic import BaseModel
 import re
 
@@ -45,7 +45,10 @@ def get_gemini_client():
     global client
     if client is None:
         try:
-            client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyA2JL7kXFhurNWZqh__DHRghXFxUiEtW-0"))
+            # Configure the API key
+            genai.configure(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyA2JL7kXFhurNWZqh__DHRghXFxUiEtW-0"))
+            # Get the model
+            client = genai.GenerativeModel('gemini-pro')
         except Exception as e:
             logging.error(f"Failed to initialize Gemini client: {e}")
             # Return None if client initialization fails
@@ -163,10 +166,9 @@ def generate_style_recommendations(cultural_input: str, qloo_data: Dict[str, Any
         if client is None:
             return generate_fallback_recommendations(cultural_input, qloo_data)
         
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[types.Content(role="user", parts=[types.Part(text=personalized_prompt)])],
-            config=types.GenerateContentConfig(
+        response = client.generate_content(
+            personalized_prompt,
+            generation_config=genai.types.GenerationConfig(
                 temperature=0.7,
                 max_output_tokens=4000  # Increased token limit
             ),
@@ -732,14 +734,13 @@ def generate_fallback_recommendations(cultural_input: str, qloo_data: Dict[str, 
                 themes = ['Cultural Fusion']
                 brand_categories = ['global', 'sustainable', 'artisan']
             else:
-                analysis_response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=[types.Content(role="user", parts=[types.Part(text=analysis_prompt)])],
-                config=types.GenerateContentConfig(
-                    temperature=0.3,
-                    max_output_tokens=300
-                ),
-            )
+                analysis_response = client.generate_content(
+                    analysis_prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.3,
+                        max_output_tokens=300
+                    ),
+                )
             
             # Parse the analysis response
             if analysis_response.text:
@@ -822,10 +823,9 @@ def generate_fallback_recommendations(cultural_input: str, qloo_data: Dict[str, 
             else:
                 for attempt in range(max_retries):
                     try:
-                        response = client.models.generate_content(
-                            model="gemini-2.5-flash",
-                            contents=[types.Content(role="user", parts=[types.Part(text=personalized_prompt)])],
-                            config=types.GenerateContentConfig(
+                        response = client.generate_content(
+                            personalized_prompt,
+                            generation_config=genai.types.GenerationConfig(
                                 temperature=0.8,
                                 max_output_tokens=400
                             ),
@@ -911,10 +911,9 @@ def generate_dynamic_brands(themes: list, categories: list) -> list:
             # Fallback to universal brands
             return ['@GlobalStyleFinds', '@SustainableFashion', '@VintageRevival', '@CulturalFusion', '@ArtisanCraft', '@EcoStyle']
         
-        brand_response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[types.Content(role="user", parts=[types.Part(text=brand_prompt)])],
-            config=types.GenerateContentConfig(
+        brand_response = client.generate_content(
+            brand_prompt,
+            generation_config=genai.types.GenerationConfig(
                 temperature=0.7,
                 max_output_tokens=400
             ),
@@ -995,10 +994,9 @@ Choose colors that reflect your cultural palette and personal preferences.
 Select fabrics that have cultural significance or traditional craftsmanship.
 Style pieces in ways that honor their cultural origins while feeling contemporary."""
         
-        outfit_response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[types.Content(role="user", parts=[types.Part(text=outfit_prompt)])],
-            config=types.GenerateContentConfig(
+        outfit_response = client.generate_content(
+            outfit_prompt,
+            generation_config=genai.types.GenerationConfig(
                 temperature=0.8,
                 max_output_tokens=600
             ),
@@ -1122,10 +1120,9 @@ Experiment with modern interpretations of traditional patterns.
 Select pieces that honor your heritage while reflecting your lifestyle.
 Create unique combinations that tell your individual cultural narrative."""
         
-        moodboard_response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[types.Content(role="user", parts=[types.Part(text=moodboard_prompt)])],
-            config=types.GenerateContentConfig(
+        moodboard_response = client.generate_content(
+            moodboard_prompt,
+            generation_config=genai.types.GenerationConfig(
                 temperature=0.8,
                 max_output_tokens=600
             ),
