@@ -48,7 +48,7 @@ def get_gemini_client():
             # Configure the API key
             genai.configure(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyA2JL7kXFhurNWZqh__DHRghXFxUiEtW-0"))
             # Get the model
-            client = genai.GenerativeModel('gemini-pro')
+            client = genai.GenerativeModel('gemini-1.5-pro')
         except Exception as e:
             logging.error(f"Failed to initialize Gemini client: {e}")
             # Return None if client initialization fails
